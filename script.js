@@ -1,5 +1,5 @@
 // ===============================
-// SPEECH SHEET ENGINE
+// SPEECH TABLE SYSTEM
 // ===============================
 
 const rows = 26;
@@ -22,44 +22,141 @@ const state = {
 };
 
 // ===============================
-// SPEECH ENGINE
+// DOM
 // ===============================
 
-function speak(text, speed = 1) {
-  return new Promise(resolve => {
+const table = document.getElementById("sheet");
 
-    if (state.stopped) {
-      resolve();
-      return;
-    }
+// ===============================
+// COLUMN NAME
+// ===============================
 
-    const utter = new SpeechSynthesisUtterance(text);
-
-    utter.rate = speed;
-
-    utter.onend = () => resolve();
-
-    speechSynthesis.speak(utter);
-  });
+function colName(n) {
+  return String.fromCharCode(65 + n);
 }
 
 // ===============================
-// CELL PARSING
+// BUILD TABLE
+// ===============================
+
+function buildTable() {
+
+  // HEADER ROW
+  let header = "<tr><th></th>";
+
+  for (let c = 0; c < cols; c++) {
+    header += `<th>${colName(c)}</th>`;
+  }
+
+  header += "</tr>";
+
+  // LANGUAGE SELECTOR ROW
+  let selector = "<tr><th></th>";
+
+  for (let c = 0; c < cols; c++) {
+
+    selector += `
+    <th>
+      <select class="col-select">
+        <option>Off</option>
+        <option>EN</option>
+        <option>IT</option>
+        <option>ES</option>
+        <option>FR</option>
+        <option>DE</option>
+      </select>
+    </th>`;
+  }
+
+  selector += "</tr>";
+
+  table.innerHTML = header + selector;
+
+  // DATA ROWS
+  for (let r = 1; r <= rows; r++) {
+
+    let row = `<tr>
+      <th class="row-head">${r}</th>`;
+
+    for (let c = 0; c < cols; c++) {
+      row += `<td contenteditable="true"></td>`;
+    }
+
+    row += "</tr>";
+
+    table.innerHTML += row;
+  }
+
+  // UPLOAD COLUMN OPTIONS
+  const uploadSelect =
+    document.getElementById("uploadColumn");
+
+  for (let c = 0; c < cols; c++) {
+
+    const option =
+      document.createElement("option");
+
+    option.value = c;
+    option.textContent =
+      `Column ${colName(c)}`;
+
+    uploadSelect.appendChild(option);
+  }
+}
+
+// ===============================
+// UI TOGGLES
+// ===============================
+
+function toggleUpload() {
+
+  const box =
+    document.getElementById("uploadBox");
+
+  box.style.display =
+    box.style.display === "block"
+      ? "none"
+      : "block";
+}
+
+function toggleReader() {
+
+  const bar =
+    document.getElementById("toolbar");
+
+  bar.style.display =
+    bar.style.display === "flex"
+      ? "none"
+      : "flex";
+}
+
+// expose globally
+window.toggleUpload = toggleUpload;
+window.toggleReader = toggleReader;
+
+// ===============================
+// CELL HELPERS
 // ===============================
 
 function cellToIndex(cell) {
 
-  cell = cell.toUpperCase().trim();
+  const clean =
+    cell.toUpperCase().trim();
 
-  const col = cell.charCodeAt(0) - 65;
-  const row = parseInt(cell.slice(1)) - 1;
+  const col =
+    clean.charCodeAt(0) - 65;
+
+  const row =
+    parseInt(clean.slice(1)) - 1;
 
   return { row, col };
 }
 
 function getCell(row, col) {
 
-  return document.querySelectorAll("#sheet tr")[row + 2]
+  return document
+    .querySelectorAll("#sheet tr")
+    [row + 2]
     ?.children[col + 1];
 }
 
@@ -68,21 +165,42 @@ function getCell(row, col) {
 // ===============================
 
 function clearHighlights() {
-  document.querySelectorAll(".reading")
-    .forEach(cell => cell.classList.remove("reading"));
+
+  document
+    .querySelectorAll(".active-cell")
+    .forEach(cell => {
+      cell.classList.remove("active-cell");
+    });
 }
 
-function highlightCell(cell) {
-  clearHighlights();
+// ===============================
+// SPEECH
+// ===============================
 
-  if (cell) {
-    cell.classList.add("reading");
-    cell.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-      inline: "center"
-    });
-  }
+function speak(text, speed = 1) {
+
+  return new Promise(resolve => {
+
+    if (state.stopped) {
+      resolve();
+      return;
+    }
+
+    const utter =
+      new SpeechSynthesisUtterance(text);
+
+    utter.rate = speed;
+
+    utter.onend = () => {
+      resolve();
+    };
+
+    utter.onerror = () => {
+      resolve();
+    };
+
+    speechSynthesis.speak(utter);
+  });
 }
 
 // ===============================
@@ -93,35 +211,43 @@ async function readCell(row, col) {
 
   if (state.stopped) return;
 
-  const cell = getCell(row, col);
+  const cell =
+    getCell(row, col);
 
   if (!cell) return;
 
-  const text = cell.innerText.trim();
+  const text =
+    cell.innerText.trim();
 
   if (!text) return;
 
-  // LIGHT UP CELL
+  // HIGHLIGHT
   clearHighlights();
 
   cell.classList.add("active-cell");
 
-  // auto-scroll
+  // AUTO SCROLL
   cell.scrollIntoView({
     behavior: "smooth",
     block: "center",
     inline: "center"
   });
 
-  // repeat speaking
-  for (let i = 0; i < state.repeatCell; i++) {
+  // REPEAT CELL
+  for (
+    let i = 0;
+    i < state.repeatCell;
+    i++
+  ) {
 
     if (state.stopped) return;
 
-    await speak(text, state.speed);
+    await speak(
+      text,
+      state.speed
+    );
   }
 
-  // remove highlight AFTER speech finishes
   cell.classList.remove("active-cell");
 }
 
@@ -129,11 +255,19 @@ async function readCell(row, col) {
 // READ ROW
 // ===============================
 
-async function readRow(row, startCol, endCol) {
+async function readRow(
+  row,
+  startCol,
+  endCol
+) {
 
   let order = [];
 
-  for (let c = startCol; c <= endCol; c++) {
+  for (
+    let c = startCol;
+    c <= endCol;
+    c++
+  ) {
     order.push(c);
   }
 
@@ -141,7 +275,11 @@ async function readRow(row, startCol, endCol) {
     order.reverse();
   }
 
-  for (let loop = 0; loop < state.repeatRow; loop++) {
+  for (
+    let repeat = 0;
+    repeat < state.repeatRow;
+    repeat++
+  ) {
 
     for (let c of order) {
 
@@ -163,12 +301,23 @@ async function readTable() {
   state.speaking = true;
   state.stopped = false;
 
-  const start = cellToIndex(state.startCell);
-  const end = cellToIndex(state.endCell);
+  document
+    .getElementById("startBtn")
+    .disabled = true;
+
+  const start =
+    cellToIndex(state.startCell);
+
+  const end =
+    cellToIndex(state.endCell);
 
   let rowOrder = [];
 
-  for (let r = start.row; r <= end.row; r++) {
+  for (
+    let r = start.row;
+    r <= end.row;
+    r++
+  ) {
     rowOrder.push(r);
   }
 
@@ -176,21 +325,25 @@ async function readTable() {
     rowOrder.reverse();
   }
 
-  for (let tableLoop = 0;
-       tableLoop < state.repeatTable;
-       tableLoop++) {
+  for (
+    let loop = 0;
+    loop < state.repeatTable;
+    loop++
+  ) {
 
     for (let r of rowOrder) {
 
       if (state.stopped) break;
 
-      await readRow(r, start.col, end.col);
+      await readRow(
+        r,
+        start.col,
+        end.col
+      );
     }
   }
 
-  clearHighlights();
-
-  state.speaking = false;
+  finishReading();
 }
 
 // ===============================
@@ -200,12 +353,26 @@ async function readTable() {
 function stopReading() {
 
   state.stopped = true;
-  state.speaking = false;
 
   speechSynthesis.cancel();
 
-  clearHighlights();
+  finishReading();
 }
+
+function finishReading() {
+
+  state.speaking = false;
+
+  clearHighlights();
+
+  document
+    .getElementById("startBtn")
+    .disabled = false;
+}
+
+// expose globally
+window.readTable = readTable;
+window.stopReading = stopReading;
 
 // ===============================
 // SAVE
@@ -215,18 +382,24 @@ function saveTable() {
 
   const data = [];
 
-  document.querySelectorAll("#sheet tr").forEach((row, i) => {
+  document
+    .querySelectorAll("#sheet tr")
+    .forEach((row, i) => {
 
-    const rowData = [];
+      if (i < 2) return;
 
-    row.querySelectorAll("td").forEach(cell => {
-      rowData.push(cell.innerText);
-    });
+      const rowData = [];
 
-    if (rowData.length) {
+      row.querySelectorAll("td")
+      .forEach(cell => {
+
+        rowData.push(
+          cell.innerText
+        );
+      });
+
       data.push(rowData);
-    }
-  });
+    });
 
   localStorage.setItem(
     "sheetData",
@@ -236,23 +409,30 @@ function saveTable() {
   alert("Saved!");
 }
 
+window.saveTable = saveTable;
+
 // ===============================
 // LOAD
 // ===============================
 
 function loadTable() {
 
-  const data = JSON.parse(
-    localStorage.getItem("sheetData") || "[]"
-  );
+  const data =
+    JSON.parse(
+      localStorage.getItem("sheetData")
+      || "[]"
+    );
 
-  const rows = document.querySelectorAll("#sheet tr");
+  const rowsDOM =
+    document.querySelectorAll("#sheet tr");
 
   data.forEach((row, r) => {
 
     row.forEach((val, c) => {
 
-      const cell = rows[r + 2]?.children[c + 1];
+      const cell =
+        rowsDOM[r + 2]
+        ?.children[c + 1];
 
       if (cell) {
         cell.innerText = val;
@@ -263,50 +443,114 @@ function loadTable() {
   alert("Loaded!");
 }
 
-// ===============================
-// TOOLBAR BINDINGS
-// ===============================
-
-window.addEventListener("DOMContentLoaded", () => {
-
-  document.getElementById("speedInput")
-    .addEventListener("input", e => {
-      state.speed = parseFloat(e.target.value);
-    });
-
-  document.getElementById("repeatRowInput")
-    .addEventListener("input", e => {
-      state.repeatRow = +e.target.value;
-    });
-
-  document.getElementById("repeatTableInput")
-    .addEventListener("input", e => {
-      state.repeatTable = +e.target.value;
-    });
-
-  document.getElementById("repeatCellInput")
-    .addEventListener("input", e => {
-      state.repeatCell = +e.target.value;
-    });
-
-  document.getElementById("startCellInput")
-    .addEventListener("input", e => {
-      state.startCell = e.target.value.toUpperCase();
-    });
-
-  document.getElementById("endCellInput")
-    .addEventListener("input", e => {
-      state.endCell = e.target.value.toUpperCase();
-    });
-
-  document.getElementById("reverseInput")
-    .addEventListener("change", e => {
-      state.reverse = e.target.checked;
-    });
-});
-
-// expose globally
-window.readTable = readTable;
-window.stopReading = stopReading;
-window.saveTable = saveTable;
 window.loadTable = loadTable;
+
+// ===============================
+// UPLOAD COLUMN
+// ===============================
+
+function uploadColumnData() {
+
+  const textarea =
+    document.getElementById("uploadText");
+
+  const select =
+    document.getElementById("uploadColumn");
+
+  const lines =
+    textarea.value.split("\n");
+
+  const col =
+    parseInt(select.value);
+
+  lines.forEach((line, rowIndex) => {
+
+    const cell =
+      getCell(rowIndex, col);
+
+    if (cell) {
+      cell.innerText =
+        line.trim();
+    }
+  });
+}
+
+window.uploadColumnData =
+  uploadColumnData;
+
+// ===============================
+// INPUT BINDINGS
+// ===============================
+
+function bindInputs() {
+
+  document
+    .getElementById("speedInput")
+    .addEventListener("input", e => {
+
+      state.speed =
+        parseFloat(e.target.value);
+    });
+
+  document
+    .getElementById("repeatRowInput")
+    .addEventListener("input", e => {
+
+      state.repeatRow =
+        +e.target.value || 1;
+    });
+
+  document
+    .getElementById("repeatTableInput")
+    .addEventListener("input", e => {
+
+      state.repeatTable =
+        +e.target.value || 1;
+    });
+
+  document
+    .getElementById("repeatCellInput")
+    .addEventListener("input", e => {
+
+      state.repeatCell =
+        +e.target.value || 1;
+    });
+
+  document
+    .getElementById("startCellInput")
+    .addEventListener("input", e => {
+
+      state.startCell =
+        e.target.value.toUpperCase();
+    });
+
+  document
+    .getElementById("endCellInput")
+    .addEventListener("input", e => {
+
+      state.endCell =
+        e.target.value.toUpperCase();
+    });
+
+  document
+    .getElementById("reverseInput")
+    .addEventListener("change", e => {
+
+      state.reverse =
+        e.target.checked;
+    });
+}
+
+// ===============================
+// INIT
+// ===============================
+
+window.addEventListener(
+  "DOMContentLoaded",
+  () => {
+
+    buildTable();
+
+    bindInputs();
+  }
+);
