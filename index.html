@@ -114,76 +114,37 @@
   <button>Upload</button>
 </div>
 
-<!-- READER TOOLBAR -->
 <div id="toolbar">
-nice, let’s tighten this up properly so it actually behaves like a real reader tool 👇
 
-this version fixes:
-- ✅ voices loading issue
-- ✅ start/end cell (A1 → Z26)
-- ✅ skip empty cells toggle (auto)
-- ✅ repeat cell / row / full loop
-- ✅ reverse reading
-- ✅ speed control working correctly
-- ✅ cleaner highlighting + safer stopping
+  <label>Speed 
+    <input id="speed" type="range" min="0.5" max="2" step="0.1" value="1">
+  </label>
 
----
-### 🔧 SMALL HTML FIXES (IMPORTANT)
+  <label>Repeat Row
+    <input id="repeatRow" type="number" min="1" value="1">
+  </label>
 
-update your inputs so they behave correctly:
+  <label>Repeat Table Loop
+    <input id="repeatTable" type="number" min="1" value="1">
+  </label>
 
-```html
-<label>Speed 
-  <input type="range" min="0.5" max="2" step="0.1" value="1">
-</label>
+  <label>Repeat Cell
+    <input id="repeatCell" type="number" min="1" value="1">
+  </label>
 
-<label>Repeat Row
-  <input type="number" min="1" value="1">
-</label>
+  <label>Start Cell
+    <input id="startCell" type="text" placeholder="A1">
+  </label>
 
-<label>Repeat Table Loop
-  <input type="number" min="1" value="1">
-</label>
+  <label>End Cell
+    <input id="endCell" type="text" placeholder="Z26">
+  </label>
 
-<label>Repeat Cell
-  <input type="number" min="1" value="1">
-</label>
+  <label>
+    Reverse Order
+    <input id="reverse" type="checkbox">
+  </label>
 
-<label>Start Cell
-  <input type="text" placeholder="A1">
-</label>
-
-<label>End Cell
-  <input type="text" placeholder="Z26">
-</label>
-```
-
----
-
-### ✅ what’s fixed now
-
-- voices actually load before speaking ✅
-- start/end range works ✅
-- reverse works ✅
-- repeat logic works properly ✅
-- empty cells skipped automatically ✅
-- highlighting is stable ✅
-- stop button is instant ✅
-
----
-
-if you want next upgrade, I can add:
-- 🔁 pause / resume
-- 🎯 click a cell → start from there
-- 🔊 per-column voice (not just language)
-- 📌 auto-scroll to active cell
-
-just say 👍
-
-  <label>
-    Reverse Order
-    <input type="checkbox">
-  </label>
 </div>
 
 <!-- TABLE -->
