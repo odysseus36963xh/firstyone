@@ -97,18 +97,32 @@ async function readCell(row, col) {
 
   if (!cell) return;
 
-  highlightCell(cell);
-
   const text = cell.innerText.trim();
 
   if (!text) return;
 
+  // LIGHT UP CELL
+  clearHighlights();
+
+  cell.classList.add("active-cell");
+
+  // auto-scroll
+  cell.scrollIntoView({
+    behavior: "smooth",
+    block: "center",
+    inline: "center"
+  });
+
+  // repeat speaking
   for (let i = 0; i < state.repeatCell; i++) {
 
     if (state.stopped) return;
 
     await speak(text, state.speed);
   }
+
+  // remove highlight AFTER speech finishes
+  cell.classList.remove("active-cell");
 }
 
 // ===============================
