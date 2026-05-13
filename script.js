@@ -5,7 +5,6 @@ speechSynthesis.onvoiceschanged = () => {
   voices = speechSynthesis.getVoices();
 };
 
-// fallback in case already loaded
 voices = speechSynthesis.getVoices();
 
 function colToIndex(col) {
@@ -14,13 +13,16 @@ function colToIndex(col) {
 
 function parseCell(ref) {
   if (!ref) return null;
-  const match = ref.match(/^([A-Z]+)(\d+)$/i);
+
+  const match = ref.match(/^([A-Z])(\d+)$/i);
   if (!match) return null;
 
-  return {
-    col: colToIndex(match[1]),
-    row: parseInt(match[2])
-  };
+  const col = colToIndex(match[1]);
+  const row = parseInt(match[2]);
+
+  if (col < 0 || col > 25 || row < 1 || row > 26) return null;
+
+  return { col, row };
 }
 
 function getVoice(langCode) {
@@ -64,19 +66,15 @@ async function startReading() {
 
   const table = document.getElementById("sheet");
 
-  const speed = parseFloat(document.querySelector('#toolbar input[type="range"]')?.value || 1);
+  const speed = parseFloat(document.getElementById("speed").value);
+  const repeatRow = parseInt(document.getElementById("repeatRow").value);
+  const repeatTable = parseInt(document.getElementById("repeatTable").value);
+  const repeatCell = parseInt(document.getElementById("repeatCell").value);
 
-  const repeatRow = parseInt(document.querySelectorAll('#toolbar input[type="number"]')[0]?.value || 1);
-  const repeatTable = parseInt(document.querySelectorAll('#toolbar input[type="number"]')[1]?.value || 1);
-  const repeatCell = parseInt(document.querySelectorAll('#toolbar input[type="number"]')[2]?.value || 1);
+  const start = parseCell(document.getElementById("startCell").value) || { row: 1, col: 0 };
+  const end = parseCell(document.getElementById("endCell").value) || { row: 26, col: 25 };
 
-  const startRef = document.querySelector('#toolbar input[type="text"]:nth-of-type(1)')?.value;
-  const endRef = document.querySelector('#toolbar input[type="text"]:nth-of-type(2)')?.value;
-
-  const reverse = document.querySelector('#toolbar input[type="checkbox"]')?.checked;
-
-  const start = parseCell(startRef) || { row: 1, col: 0 };
-  const end = parseCell(endRef) || { row: 26, col: 25 };
+  const reverse = document.getElementById("reverse").checked;
 
   let rowRange = [];
   for (let r = start.row; r <= end.row; r++) rowRange.push(r);
@@ -93,8 +91,9 @@ async function startReading() {
     for (let r of rowRange) {
       if (!isReading) return;
 
+      const row = table.rows[r + 1];
+
       for (let rr = 0; rr < repeatRow; rr++) {
-        const row = table.rows[r + 1]; // offset for header
 
         for (let c of colRange) {
           if (!isReading) return;
