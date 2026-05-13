@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Speech Table System</title>
+
+<style>
+
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#f5f5f5;
+}
+
+/* TOP BAR */
+
+header{
+  background:#1a73e8;
+  color:white;
+  padding:10px;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+
+button{
+  padding:8px 12px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+#startBtn{
+  background:#1e8e3e;
+  color:white;
+}
+
+#stopBtn{
+  background:#d93025;
+  color:white;
+}
+
+/* TOOLBAR */
+
+#toolbar{
+  display:none;
+  background:#eaeaea;
+  padding:12px;
+  gap:15px;
+  flex-wrap:wrap;
+}
+
+#toolbar label{
+  display:flex;
+  flex-direction:column;
+  font-size:12px;
+  gap:4px;
+}
+
+/* UPLOAD */
+
+#uploadBox{
+  display:none;
+  padding:12px;
+  background:#ddd;
+}
+
+#uploadBox textarea{
+  width:300px;
+  height:120px;
+  display:block;
+  margin-bottom:10px;
+}
+
+/* TABLE */
+
+#sheetWrap{
+  overflow:auto;
+  height:calc(100vh - 140px);
+  padding:10px;
+}
+
+table{
+  border-collapse:collapse;
+  background:white;
+}
+
+th,td{
+  border:1px solid #ccc;
+  width:90px;
+  min-width:90px;
+  height:34px;
+  text-align:center;
+  font-size:12px;
+}
+
+th{
+  background:#f0f0f0;
+  position:sticky;
+  top:0;
+  z-index:2;
+}
+
+.row-head{
+  position:sticky;
+  left:0;
+  background:#f0f0f0;
+  z-index:1;
+}
+
+td{
+  background:white;
+}
+
+td[contenteditable="true"]{
+  outline:none;
+  overflow-wrap:anywhere;
+}
+
+/* ACTIVE READING CELL */
+
+.active-cell{
+  background:#ffeb3b !important;
+  color:black;
+  outline:3px solid #ff9800;
+  box-shadow:
+    0 0 12px #ff9800,
+    0 0 24px rgba(255,152,0,0.7);
+
+  animation:readingPulse 1s infinite;
+}
+
+@keyframes readingPulse{
+
+  0%{
+    transform:scale(1);
+  }
+
+  50%{
+    transform:scale(1.03);
+  }
+
+  100%{
+    transform:scale(1);
+  }
+}
+
+/* COLUMN LANGUAGE */
+
+.col-select{
+  width:80px;
+  font-size:10px;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+
+  <button onclick="saveTable()">
+    Save
+  </button>
+
+  <button onclick="loadTable()">
+    Load
+  </button>
+
+  <button onclick="toggleUpload()">
+    Upload Column
+  </button>
+
+  <button onclick="toggleReader()">
+    Reader Options
+  </button>
+
+  <button id="startBtn" onclick="readTable()">
+    ▶ Start Reading
+  </button>
+
+  <button id="stopBtn" onclick="stopReading()">
+    ■ Stop
+  </button>
+
+</header>
+
+<!-- UPLOAD -->
+
+<div id="uploadBox">
+
+  <h3>Upload Column</h3>
+
+  <textarea id="uploadText"
+  placeholder="Paste lines here..."></textarea>
+
+  <select id="uploadColumn"></select>
+
+  <button onclick="uploadColumnData()">
+    Upload
+  </button>
+
+</div>
+
+<!-- TOOLBAR -->
+
+<div id="toolbar">
+
+  <label>
+    Speed
+    <input
+      id="speedInput"
+      type="range"
+      min="0.5"
+      max="2"
+      step="0.1"
+      value="1">
+  </label>
+
+  <label>
+    Repeat Row
+    <input
+      id="repeatRowInput"
+      type="number"
+      min="1"
+      value="1">
+  </label>
+
+  <label>
+    Repeat Table
+    <input
+      id="repeatTableInput"
+      type="number"
+      min="1"
+      value="1">
+  </label>
+
+  <label>
+    Repeat Cell
+    <input
+      id="repeatCellInput"
+      type="number"
+      min="1"
+      value="1">
+  </label>
+
+  <label>
+    Start Cell
+    <input
+      id="startCellInput"
+      type="text"
+      value="A1">
+  </label>
+
+  <label>
+    End Cell
+    <input
+      id="endCellInput"
+      type="text"
+      value="Z26">
+  </label>
+
+  <label>
+    Reverse
+    <input
+      id="reverseInput"
+      type="checkbox">
+  </label>
+
+</div>
+
+<!-- TABLE -->
+
+<div id="sheetWrap">
+  <table id="sheet"></table>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
