@@ -17,7 +17,8 @@ const state = {
   startCell: "A1",
   endCell: "Z26",
   reverse: false,
-  speaking: false
+  speaking: false,
+  stopped: false
 };
 
 // ===============================
@@ -26,6 +27,12 @@ const state = {
 
 function speak(text, speed = 1) {
   return new Promise(resolve => {
+
+    if (state.stopped) {
+      resolve();
+      return;
+    }
+
     const utter = new SpeechSynthesisUtterance(text);
 
     utter.rate = speed;
@@ -41,14 +48,41 @@ function speak(text, speed = 1) {
 // ===============================
 
 function cellToIndex(cell) {
+
+  cell = cell.toUpperCase().trim();
+
   const col = cell.charCodeAt(0) - 65;
   const row = parseInt(cell.slice(1)) - 1;
+
   return { row, col };
 }
 
 function getCell(row, col) {
+
   return document.querySelectorAll("#sheet tr")[row + 2]
     ?.children[col + 1];
+}
+
+// ===============================
+// HIGHLIGHT
+// ===============================
+
+function clearHighlights() {
+  document.querySelectorAll(".reading")
+    .forEach(cell => cell.classList.remove("reading"));
+}
+
+function highlightCell(cell) {
+  clearHighlights();
+
+  if (cell) {
+    cell.classList.add("reading");
+    cell.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+      inline: "center"
+    });
+  }
 }
 
 // ===============================
@@ -56,15 +90,23 @@ function getCell(row, col) {
 // ===============================
 
 async function readCell(row, col) {
+
+  if (state.stopped) return;
+
   const cell = getCell(row, col);
+
   if (!cell) return;
 
+  highlightCell(cell);
+
   const text = cell.innerText.trim();
+
   if (!text) return;
 
-  const repeat = state.repeatCell;
+  for (let i = 0; i < state.repeatCell; i++) {
 
-  for (let i = 0; i < repeat; i++) {
+    if (state.stopped) return;
+
     await speak(text, state.speed);
   }
 }
@@ -73,17 +115,24 @@ async function readCell(row, col) {
 // READ ROW
 // ===============================
 
-async function readRow(row) {
-  const order = [...Array(cols).keys()];
+async function readRow(row, startCol, endCol) {
 
-  if (state.reverse) order.reverse();
+  let order = [];
 
-  for (let c of order) {
-    await readCell(row, c);
+  for (let c = startCol; c <= endCol; c++) {
+    order.push(c);
   }
 
-  for (let i = 1; i < state.repeatRow; i++) {
+  if (state.reverse) {
+    order.reverse();
+  }
+
+  for (let loop = 0; loop < state.repeatRow; loop++) {
+
     for (let c of order) {
+
+      if (state.stopped) return;
+
       await readCell(row, c);
     }
   }
@@ -94,93 +143,156 @@ async function readRow(row) {
 // ===============================
 
 async function readTable() {
+
   if (state.speaking) return;
+
   state.speaking = true;
+  state.stopped = false;
 
   const start = cellToIndex(state.startCell);
   const end = cellToIndex(state.endCell);
 
-  const rowOrder = [];
+  let rowOrder = [];
 
   for (let r = start.row; r <= end.row; r++) {
     rowOrder.push(r);
   }
 
-  if (state.reverse) rowOrder.reverse();
+  if (state.reverse) {
+    rowOrder.reverse();
+  }
 
-  for (let loop = 0; loop < state.repeatTable; loop++) {
+  for (let tableLoop = 0;
+       tableLoop < state.repeatTable;
+       tableLoop++) {
+
     for (let r of rowOrder) {
-      await readRow(r);
+
+      if (state.stopped) break;
+
+      await readRow(r, start.col, end.col);
     }
   }
+
+  clearHighlights();
 
   state.speaking = false;
 }
 
 // ===============================
-// EVENT BINDING
+// STOP
 // ===============================
 
-// Hook toolbar inputs if they exist
-window.addEventListener("DOMContentLoaded", () => {
-  const toolbar = document.getElementById("toolbar");
+function stopReading() {
 
-  if (!toolbar) return;
+  state.stopped = true;
+  state.speaking = false;
 
-  const inputs = toolbar.querySelectorAll("input");
+  speechSynthesis.cancel();
 
-  inputs.forEach(input => {
-    input.addEventListener("input", () => {
-      const label = input.closest("label")?.innerText.toLowerCase();
-
-      if (!label) return;
-
-      if (label.includes("speed")) state.speed = input.value;
-      if (label.includes("repeat row")) state.repeatRow = +input.value;
-      if (label.includes("repeat table")) state.repeatTable = +input.value;
-      if (label.includes("repeat cell")) state.repeatCell = +input.value;
-      if (label.includes("start")) state.startCell = input.value.toUpperCase();
-      if (label.includes("end")) state.endCell = input.value.toUpperCase();
-      if (input.type === "checkbox") state.reverse = input.checked;
-    });
-  });
-});
+  clearHighlights();
+}
 
 // ===============================
-// BUTTONS (you can connect later)
+// SAVE
 // ===============================
 
-// expose for HTML buttons
-window.readTable = readTable;
+function saveTable() {
 
-// placeholder save
-window.saveTable = function () {
   const data = [];
 
   document.querySelectorAll("#sheet tr").forEach((row, i) => {
+
     const rowData = [];
 
     row.querySelectorAll("td").forEach(cell => {
       rowData.push(cell.innerText);
     });
 
-    if (rowData.length) data.push(rowData);
+    if (rowData.length) {
+      data.push(rowData);
+    }
   });
 
-  localStorage.setItem("sheetData", JSON.stringify(data));
-  alert("Saved!");
-};
+  localStorage.setItem(
+    "sheetData",
+    JSON.stringify(data)
+  );
 
-// placeholder load
-window.loadTable = function () {
-  const data = JSON.parse(localStorage.getItem("sheetData") || "[]");
+  alert("Saved!");
+}
+
+// ===============================
+// LOAD
+// ===============================
+
+function loadTable() {
+
+  const data = JSON.parse(
+    localStorage.getItem("sheetData") || "[]"
+  );
 
   const rows = document.querySelectorAll("#sheet tr");
 
   data.forEach((row, r) => {
+
     row.forEach((val, c) => {
+
       const cell = rows[r + 2]?.children[c + 1];
-      if (cell) cell.innerText = val;
+
+      if (cell) {
+        cell.innerText = val;
+      }
     });
   });
-};
+
+  alert("Loaded!");
+}
+
+// ===============================
+// TOOLBAR BINDINGS
+// ===============================
+
+window.addEventListener("DOMContentLoaded", () => {
+
+  document.getElementById("speedInput")
+    .addEventListener("input", e => {
+      state.speed = parseFloat(e.target.value);
+    });
+
+  document.getElementById("repeatRowInput")
+    .addEventListener("input", e => {
+      state.repeatRow = +e.target.value;
+    });
+
+  document.getElementById("repeatTableInput")
+    .addEventListener("input", e => {
+      state.repeatTable = +e.target.value;
+    });
+
+  document.getElementById("repeatCellInput")
+    .addEventListener("input", e => {
+      state.repeatCell = +e.target.value;
+    });
+
+  document.getElementById("startCellInput")
+    .addEventListener("input", e => {
+      state.startCell = e.target.value.toUpperCase();
+    });
+
+  document.getElementById("endCellInput")
+    .addEventListener("input", e => {
+      state.endCell = e.target.value.toUpperCase();
+    });
+
+  document.getElementById("reverseInput")
+    .addEventListener("change", e => {
+      state.reverse = e.target.checked;
+    });
+});
+
+// expose globally
+window.readTable = readTable;
+window.stopReading = stopReading;
+window.saveTable = saveTable;
+window.loadTable = loadTable;
