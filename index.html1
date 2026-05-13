@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Simple Sheet Grid</title>
+<title>Speech Table System</title>
 
 <style>
   body {
@@ -13,15 +13,36 @@
   }
 
   header {
-    background: #0f9d58;
+    background: #1a73e8;
     color: white;
-    padding: 10px 15px;
-    font-size: 18px;
+    padding: 10px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
   }
 
-  .wrap {
+  button {
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+
+  #toolbar {
+    display: none;
+    background: #eee;
     padding: 10px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  #uploadBox {
+    display: none;
+    padding: 10px;
+    background: #ddd;
+  }
+
+  #sheetWrap {
     overflow: auto;
+    padding: 10px;
   }
 
   table {
@@ -30,73 +51,153 @@
   }
 
   th, td {
-    border: 1px solid #ddd;
-    width: 80px;
-    height: 28px;
+    border: 1px solid #ccc;
+    width: 90px;
+    height: 30px;
     text-align: center;
     font-size: 12px;
   }
 
   th {
-    background: #eee;
-    font-weight: bold;
+    background: #f0f0f0;
     position: sticky;
     top: 0;
   }
 
-  .row-header {
-    background: #eee;
+  .row-head {
+    background: #f0f0f0;
     position: sticky;
     left: 0;
   }
 
   td[contenteditable="true"] {
     outline: none;
+    overflow-wrap: anywhere;
   }
 
-  td[contenteditable="true"]:focus {
-    background: #e8f0fe;
+  /* column selector row under letters */
+  .col-select {
+    width: 90px;
+    font-size: 10px;
   }
+
 </style>
 </head>
 
 <body>
 
+<!-- TOP BUTTON BAR -->
 <header>
-  Simple Spreadsheet (A–Z × 1–26)
+  <button>Save Table Data</button>
+  <button onclick="toggleUpload()">Upload Column</button>
+  <button onclick="toggleReader()">Reader Options</button>
 </header>
 
-<div class="wrap">
+<!-- UPLOAD BOX -->
+<div id="uploadBox">
+  <h3>Upload Column</h3>
+
+  <textarea placeholder="Paste column data here"></textarea>
+
+  <select>
+    <option>Column A</option>
+    <option>Column B</option>
+    <option>Column C</option>
+    <option>Column D</option>
+  </select>
+
+  <button>Upload</button>
+</div>
+
+<!-- READER TOOLBAR -->
+<div id="toolbar">
+  <label>Speed <input type="range"></label>
+
+  <label>Repeat Row
+    <input type="number" min="1">
+  </label>
+
+  <label>Repeat Table Loop
+    <input type="number" min="1">
+  </label>
+
+  <label>Repeat Cell
+    <input type="number" min="1">
+  </label>
+
+  <label>Start Cell
+    <input type="text" placeholder="A1">
+  </label>
+
+  <label>End Cell
+    <input type="text" placeholder="Z26">
+  </label>
+
+  <label>
+    Reverse Order
+    <input type="checkbox">
+  </label>
+</div>
+
+<!-- TABLE -->
+<div id="sheetWrap">
   <table id="sheet"></table>
 </div>
 
 <script>
-  const table = document.getElementById("sheet");
+const cols = 26;
+const rows = 26;
 
-  const cols = 26; // A-Z
-  const rows = 26; // 1-26
+const table = document.getElementById("sheet");
 
-  function colName(n) {
-    return String.fromCharCode(65 + n); // A=65
-  }
+// column letters
+function colName(n) {
+  return String.fromCharCode(65 + n);
+}
 
-  // Header row
-  let header = "<tr><th></th>";
+// HEADER ROW
+let header = "<tr><th></th>";
+for (let c = 0; c < cols; c++) {
+  header += `<th>${colName(c)}</th>`;
+}
+header += "</tr>";
+
+// COLUMN SELECTOR ROW (under letters)
+let selector = "<tr><th></th>";
+for (let c = 0; c < cols; c++) {
+  selector += `<th><select class='col-select'>
+    <option>Off</option>
+    <option>EN</option>
+    <option>IT</option>
+    <option>ES</option>
+    <option>FR</option>
+    <option>DE</option>
+  </select></th>`;
+}
+selector += "</tr>";
+
+table.innerHTML += header + selector;
+
+// DATA ROWS
+for (let r = 1; r <= rows; r++) {
+  let row = `<tr><th class="row-head">${r}</th>`;
   for (let c = 0; c < cols; c++) {
-    header += `<th>${colName(c)}</th>`;
+    row += `<td contenteditable="true"></td>`;
   }
-  header += "</tr>";
-  table.innerHTML += header;
+  row += "</tr>";
+  table.innerHTML += row;
+}
 
-  // Data rows
-  for (let r = 1; r <= rows; r++) {
-    let row = `<tr><th class="row-header">${r}</th>`;
-    for (let c = 0; c < cols; c++) {
-      row += `<td contenteditable="true"></td>`;
-    }
-    row += "</tr>";
-    table.innerHTML += row;
-  }
+// UI toggles (structure only)
+function toggleUpload() {
+  const box = document.getElementById("uploadBox");
+  box.style.display = box.style.display === "block" ? "none" : "block";
+}
+
+function toggleReader() {
+  const bar = document.getElementById("toolbar");
+  bar.style.display = bar.style.display === "flex" ? "none" : "flex";
+}
 </script>
 
 </body>
