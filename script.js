@@ -259,11 +259,6 @@ function saveTable() {
 // ===============================
 // CONNECT BUTTON
 // ===============================
-document.addEventListener("DOMContentLoaded", () => {
-  const btn = document.querySelector("header button");
-  if (btn) {
-    btn.onclick = saveTable;
-  }
-});
+
 
 
