@@ -120,3 +120,150 @@ async function startReading() {
   clearHighlight();
   isReading = false;
 }
+
+
+
+// ===============================
+// SAVE TABLE AS JSON (FULL FEATURE)
+// ===============================
+
+function getTimestamp() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+
+  return (
+    d.getFullYear() + "-" +
+    pad(d.getMonth() + 1) + "-" +
+    pad(d.getDate()) + "_" +
+    pad(d.getHours()) + "-" +
+    pad(d.getMinutes()) + "-" +
+    pad(d.getSeconds())
+  );
+}
+
+// Build table JSON
+function exportTableData() {
+  const table = document.getElementById("sheet");
+
+  const data = [];
+  const selectors = [];
+
+  // language selector row is index 1
+  const selectorRow = table.rows[1];
+
+  for (let r = 2; r < table.rows.length; r++) {
+    const row = table.rows[r];
+    const rowData = [];
+
+    for (let c = 1; c < row.cells.length; c++) {
+      const cell = row.cells[c];
+      const selector = selectorRow.cells[c].querySelector("select");
+
+      rowData.push({
+        value: cell.innerText,
+        lang: selector ? selector.value : "Off"
+      });
+    }
+
+    data.push(rowData);
+  }
+
+  return {
+    createdAt: new Date().toISOString(),
+    columns: 26,
+    rows: 26,
+    data
+  };
+}
+
+// Download JSON file
+function downloadJSON(filename, data) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], {
+    type: "application/json"
+  });
+
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ===============================
+// SAVE DIALOG (POPUP)
+// ===============================
+function openSaveDialog(defaultName, onConfirm) {
+  const overlay = document.createElement("div");
+  overlay.style = `
+    position:fixed;
+    top:0;left:0;
+    width:100%;height:100%;
+    background:rgba(0,0,0,0.4);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:9999;
+  `;
+
+  const box = document.createElement("div");
+  box.style = `
+    background:white;
+    padding:20px;
+    border-radius:8px;
+    width:320px;
+    font-family:Arial;
+  `;
+
+  box.innerHTML = `
+    <h3 style="margin-top:0;">Save Table</h3>
+    <p style="font-size:12px;color:#666;">Choose file name</p>
+    <input id="saveFileName" style="width:100%;padding:8px;"
+           value="${defaultName}">
+    <div style="margin-top:15px; display:flex; gap:10px; justify-content:flex-end;">
+      <button id="cancelSave" style="background:#ccc;color:#000;">Cancel</button>
+      <button id="confirmSave">Save</button>
+    </div>
+  `;
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  document.getElementById("cancelSave").onclick = () => {
+    overlay.remove();
+  };
+
+  document.getElementById("confirmSave").onclick = () => {
+    const name = document.getElementById("saveFileName").value.trim();
+    overlay.remove();
+    onConfirm(name || defaultName);
+  };
+}
+
+// ===============================
+// MAIN SAVE FUNCTION
+// ===============================
+function saveTable() {
+  const autoName = `language-table_${getTimestamp()}.json`;
+  const data = exportTableData();
+
+  openSaveDialog(autoName, (filename) => {
+    downloadJSON(filename.endsWith(".json") ? filename : filename + ".json", data);
+  });
+}
+
+// ===============================
+// CONNECT BUTTON
+// ===============================
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.querySelector("header button");
+  if (btn) {
+    btn.onclick = saveTable;
+  }
+});
+
+
