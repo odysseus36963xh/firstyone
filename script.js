@@ -213,59 +213,6 @@ function saveTable() {
 
 
 
-// Toggle upload box visibility 
-
-
-
-// Toggle upload box visibility
-function toggleUpload() {   const box = document.getElementById("uploadBox");   
-                         if (!box) return;   box.style.display = box.style.display === "block" ? "none" : "block"; } 
-// Upload logic
-(attaches once DOM is ready) (function() {   const init = () => {     const uploadBtn = document.querySelector("#uploadBox button");     
-if (!uploadBtn) return;     uploadBtn.addEventListener("click", () => {       const textarea = document.querySelector("#uploadBox textarea");  
-                                                                       const select   = document.querySelector("#uploadBox select");    
-                                                                       const table    = document.getElementById("sheet");   
-                                                                       if (!textarea || !select || !table) return;    
-                                                                       const raw = textarea.value.trim();       
-                                                                       if (!raw) { alert("Please paste column data first."); return; }    
-                                                                       // 1. Parse lines & clean   
-                                                                       let lines = raw.split(/\r?\n/).map(l => l.trim()).filter(l => l !== "");   
-                                                                       // 2. Respect Reverse Order checkbox if present     
-                                                                       const reverseEl = document.getElementById("reverse");   
-                                                                       if (reverseEl && reverseEl.checked) lines.reverse();    
-                                                                       // 3. Determine target column index (A=1, B=2, C=3, D=4...)   
-                                                                       // Column 0 is the row-number header, so A starts at index 1   
-                                                                       const colLetter = select.value.replace("Column ", "").toUpperCase();    
-                                                                       const colIdx = colLetter.charCodeAt(0) - 64;   
-                                                                       // 4. Determine start row from toolbar (defaults to 1)    
-                                                                       let startRow = 1;       
-                                                                       const startCellEl = document.getElementById("startCell");      
-                                                                       if (startCellEl && startCellEl.value.trim()) {      
-                                                                         const match = startCellEl.value.trim().toUpperCase().match(/[A-Z]+(\d+)/); 
-                                                                         if (match) startRow = parseInt(match[1], 10);       }     
-                                                                       // 5. Table structure offset:    
-                                                                       // row 0 = header (A-Z) 
-                                                                       // row 1 = language selectors      
-                                                                       // row 2+ = actual data rows     
-                                                                       const dataOffset = 2;       
-                                                                       const maxDataRows = table.rows.length - dataOffset;     
-                                                                       // 6. Populate cells   
-                                                                       let populated = 0;   
-                                                                       for (let i = 0; i < lines.length; i++) {    
-                                                                         const targetRowIdx = (startRow - 1) + i; 
-                                                                         // 0-based data index 
-                                                                         const tableRowIdx  = dataOffset + targetRowIdx;       
-                                                                         if (tableRowIdx >= table.rows.length) break; // Stop at table bottom  
-                                                                         const cell = table.rows[tableRowIdx]?.cells[colIdx];        
-                                                                         if (cell) {           cell.textContent = lines[i];  
-                                                                                    populated++;         }       }   
-                                                                       alert(`✅ Uploaded ${populated} item${populated===1?'':'s'} to Column ${colLetter} (starting row ${startRow}).`);     });   };  
-                                          // Safe attachment regardless of load order 
-                                          if (document.readyState === "loading") {     document.addEventListener("DOMContentLoaded", init);   } else {     init();   } })();
-
-
-
-
 // ===============================
 // UI TOGGLES
 // ===============================
