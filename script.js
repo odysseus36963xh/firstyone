@@ -232,90 +232,224 @@ function toggleReader() {
 // FREQUENCY FINDER (BULLETPROOF)
 // ===============================
 document.getElementById("openFinder").addEventListener("click", () => {
-  const newTab = window.open("", "_blank");
-  if (!newTab) return; // Popup blocked
 
-  const innerJS = `
-    document.addEventListener("DOMContentLoaded", function() {
-      document.getElementById("findBtn").addEventListener("click", function() {
-        var raw = document.getElementById("textInput").value;
-        var size = parseInt(document.getElementById("comboSize").value) || 1;
-        if (!raw.trim()) { alert("Please paste text first."); return; }
-        
-        try {
-          var text = raw.normalize("NFKC");
-          // Remove numbers, punctuation & symbols. Keep letters + spaces
-          text = text.replace(/[\\p{N}\\p{P}\\p{S}]/gu, " ");
-          text = text.toLowerCase().replace(/\\s+/g, " ").trim();
-          
-          // Extract all letter sequences (works for ALL Unicode scripts)
-          var tokens = text.match(/[\\p{L}]+/gu) || [];
-          if (tokens.length === 0) { alert("No valid words/characters found."); return; }
+    const newTab = window.open("", "_blank");
 
-          // Generate sliding window combinations
-          var combos = [];
-          for (var i = 0; i <= tokens.length - size; i++) {
-            combos.push(tokens.slice(i, i + size).join(" "));
-          }
-
-          // Count frequency
-          var freq = {};
-          combos.forEach(function(c) { freq[c] = (freq[c] || 0) + 1; });
-          
-          // Sort descending
-          var sorted = Object.entries(freq).sort(function(a, b) { return b[1] - a[1]; });
-
-          // Render table
-          var tbody = document.querySelector("#resultTable tbody");
-          tbody.innerHTML = "";
-          sorted.forEach(function(item) {
-            var w = item[0];
-            var c = item[1];
-            var pct = ((c / combos.length) * 100).toFixed(4);
-            var tr = document.createElement("tr");
-            tr.innerHTML = '<td>' + w + '</td><td>' + c + '</td><td>' + pct + '%</td>';
-            tbody.appendChild(tr);
-          });
-        } catch(e) {
-          alert("Processing error: " + e.message);
-        }
-      });
-    });
-  `;
-
-  const html = `<!DOCTYPE html>
+    newTab.document.write(`
+    <!DOCTYPE html>
     <html lang="en">
     <head>
-      <meta charset="UTF-8">
-      <title>Frequency Finder</title>
-      <style>
-        body{font-family:Arial,sans-serif;background:#101010;color:white;padding:20px;}
-        textarea{width:100%;height:300px;padding:15px;font-size:16px;border-radius:10px;border:none;resize:vertical;margin-top:10px;background:#222;color:white;}
-        input[type=number]{padding:10px;width:260px;font-size:16px;border:none;border-radius:8px;margin-top:10px;background:#333;color:white;}
-        button{background:#2b7cff;color:white;border:none;padding:12px 20px;border-radius:10px;cursor:pointer;font-size:17px;margin-top:10px;}
-        button:hover{background:#1e63da;}
-        table{width:100%;border-collapse:collapse;margin-top:25px;background:#1a1a1a;}
-        th,td{border:1px solid #333;padding:12px;text-align:left;}
-        th{background:#222;}
-        tr:nth-child(even){background:#151515;}
-        h1{color:#61a8ff;}
-        .small{color:#bbb;margin-bottom:15px;}
-      </style>
-    </head>
-    <body>
-      <h1>Frequency Finder</h1>
-      <div class="small">Universal: English, Arabic, Chinese, Korean, Hindi, Russian, Georgian, etc.</div>
-      <textarea id="textInput" placeholder="Paste text here..."></textarea><br>
-      <input id="comboSize" type="number" min="1" max="10" value="1" placeholder="Words/Chars per combo"><br>
-      <button id="findBtn">Find Frequency</button>
-      <table id="resultTable">
-        <thead><tr><th>Word / Combination</th><th>Total Appearances</th><th>Percentage</th></tr></thead>
-        <tbody></tbody>
-      </table>
-      <script>${innerJS}<\\/script>
-    </body>
-    </html>`;
+    <meta charset="UTF-8">
+    <title>Frequency Finder</title>
 
-  newTab.document.write(html);
-  newTab.document.close();
+    <style>
+        body{
+            font-family:Arial,sans-serif;
+            background:#101010;
+            color:white;
+            padding:20px;
+        }
+
+        textarea{
+            width:100%;
+            height:300px;
+            padding:15px;
+            font-size:16px;
+            border-radius:10px;
+            border:none;
+            resize:vertical;
+            margin-top:10px;
+        }
+
+        input{
+            padding:10px;
+            width:260px;
+            font-size:16px;
+            border:none;
+            border-radius:8px;
+            margin-top:10px;
+        }
+
+        button{
+            background:#2b7cff;
+            color:white;
+            border:none;
+            padding:12px 20px;
+            border-radius:10px;
+            cursor:pointer;
+            font-size:17px;
+            margin-top:10px;
+        }
+
+        button:hover{
+            background:#1e63da;
+        }
+
+        table{
+            width:100%;
+            border-collapse:collapse;
+            margin-top:25px;
+            background:#1a1a1a;
+        }
+
+        th, td{
+            border:1px solid #333;
+            padding:12px;
+            text-align:left;
+        }
+
+        th{
+            background:#222;
+        }
+
+        tr:nth-child(even){
+            background:#151515;
+        }
+
+        h1{
+            color:#61a8ff;
+        }
+
+        .small{
+            color:#bbb;
+            margin-bottom:15px;
+        }
+    </style>
+
+    </head>
+
+    <body>
+
+    <h1>Frequency Finder</h1>
+
+    <div class="small">
+        Works with English, Arabic, Chinese, Hindi, Russian, Georgian, and most world alphabets.
+    </div>
+
+    <textarea id="textInput"
+    placeholder="Paste large or small text here..."></textarea>
+
+    <br>
+
+    <input id="comboSize" type="number" min="1" max="10" value="1"
+    placeholder="Words per combo">
+
+    <br>
+
+    <button id="findBtn">Find Frequency</button>
+
+    <table id="resultTable">
+        <thead>
+            <tr>
+                <th>Word / Combination</th>
+                <th>Total Appearances</th>
+                <th>Percentage of Text</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+
+    function normalizeText(text){
+
+        // Unicode normalize
+        text = text.normalize("NFKC");
+
+        // Remove digits from every language
+        text = text.replace(/[\\p{N}]/gu, " ");
+
+        // Lowercase safely
+        text = text.toLocaleLowerCase();
+
+        // Remove punctuation/symbols but preserve letters from all languages
+        text = text.replace(/[\\p{P}\\p{S}]/gu, " ");
+
+        // Collapse spaces
+        text = text.replace(/\\s+/g, " ").trim();
+
+        return text;
+    }
+
+    function tokenize(text){
+
+        // Match all Unicode letters
+        const words = text.match(/[\\p{L}]+/gu);
+
+        return words || [];
+    }
+
+    function generateCombinations(words, size){
+
+        const combos = [];
+
+        for(let i = 0; i <= words.length - size; i++){
+
+            const combo = words.slice(i, i + size).join(" ");
+
+            combos.push(combo);
+        }
+
+        return combos;
+    }
+
+    document.getElementById("findBtn").addEventListener("click", () => {
+
+        const rawText = document.getElementById("textInput").value;
+
+        const comboSize =
+            parseInt(document.getElementById("comboSize").value) || 1;
+
+        if(!rawText.trim()){
+            alert("Please paste text first.");
+            return;
+        }
+
+        const cleaned = normalizeText(rawText);
+
+        const words = tokenize(cleaned);
+
+        const units = generateCombinations(words, comboSize);
+
+        const frequency = {};
+
+        for(const unit of units){
+
+            frequency[unit] = (frequency[unit] || 0) + 1;
+        }
+
+        const totalUnits = units.length;
+
+        const sorted = Object.entries(frequency)
+            .sort((a,b) => b[1] - a[1]);
+
+        const tbody =
+            document.querySelector("#resultTable tbody");
+
+        tbody.innerHTML = "";
+
+        sorted.forEach(([word, count]) => {
+
+            const percentage =
+                ((count / totalUnits) * 100).toFixed(4);
+
+            const row = document.createElement("tr");
+
+            row.innerHTML = \`
+                <td>\${word}</td>
+                <td>\${count}</td>
+                <td>\${percentage}%</td>
+            \`;
+
+            tbody.appendChild(row);
+        });
+
+    });
+
+    </script>
+
+    </body>
+    </html>
+    `);
+
 });
