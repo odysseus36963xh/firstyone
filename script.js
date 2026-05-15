@@ -223,7 +223,6 @@ function toggleReader() {
   bar.style.display = bar.style.display === "flex" ? "none" : "flex";
 } 
 
-
 document.getElementById("openFinder").addEventListener("click", () => {
   const newTab = window.open("", "_blank");
   if (!newTab) {
@@ -256,24 +255,37 @@ document.getElementById("openFinder").addEventListener("click", () => {
   }
   textarea:focus{border-color:#5ea4ff}
   .controls{
-    display:flex;flex-wrap:wrap;gap:12px;
+    display:flex;flex-wrap:wrap;gap:10px;
     align-items:center;margin-top:14px;
   }
   .controls label{color:#aaa;font-size:14px}
-  .controls input[type=number]{
-    width:70px;padding:10px;font-size:15px;
+  .controls input[type=number], .controls input[type=text]{
+    padding:10px 12px;font-size:14px;
     border:none;border-radius:8px;
-    background:#1a1a1a;color:#e0e0e0;text-align:center;
+    background:#1a1a1a;color:#e0e0e0;
   }
+  .controls input[type=number]{width:65px;text-align:center}
+  .controls input[type=text]{width:220px}
+  .controls input::placeholder{color:#555}
   button{
     background:linear-gradient(135deg,#2b7cff,#1a5ec2);
-    color:#fff;border:none;padding:12px 28px;
-    border-radius:10px;cursor:pointer;font-size:16px;
+    color:#fff;border:none;padding:11px 22px;
+    border-radius:10px;cursor:pointer;font-size:15px;
     font-weight:600;transition:all .2s;
   }
   button:hover{transform:translateY(-1px);box-shadow:0 4px 18px #2b7cff55}
   button:active{transform:translateY(0)}
   button:disabled{opacity:.5;cursor:wait;transform:none;box-shadow:none}
+  
+  /* COPY BUTTONS */
+  .copy-btn{
+    background:#1a1a1a;border:1px solid #333;color:#aaa;
+    padding:9px 14px;font-size:13px;border-radius:8px;cursor:pointer;
+    transition:all .2s;font-weight:500;
+  }
+  .copy-btn:hover{background:#222;color:#fff;border-color:#5ea4ff}
+  .copy-btn.copied{background:#1b5e20;border-color:#4caf50;color:#fff}
+
   .stats{
     margin-top:18px;padding:12px 16px;
     background:#161616;border-radius:8px;
@@ -310,12 +322,6 @@ document.getElementById("openFinder").addEventListener("click", () => {
   .no-results{
     text-align:center;padding:40px;color:#555;font-size:15px;
   }
-  #filterInput{
-    padding:10px 14px;width:260px;font-size:14px;
-    border:none;border-radius:8px;
-    background:#1a1a1a;color:#e0e0e0;
-  }
-  #filterInput::placeholder{color:#555}
   .spinner{
     display:inline-block;width:18px;height:18px;
     border:3px solid #ffffff44;border-top-color:#fff;
@@ -330,19 +336,21 @@ document.getElementById("openFinder").addEventListener("click", () => {
 <h1>\u{1F50D} Frequency Finder</h1>
 <div class="subtitle">
   Paste any text \u2014 Bible verses, Bhagavad Gita, Quran, Tao Te Ching,
-  Tolstoy poems, or anything in any language (English, Arabic, Chinese,
-  Russian, Georgian, Hindi, etc.). Digits and punctuation are stripped
-  automatically. Case is ignored.
+  Tolstoy poems, or anything in any language. Digits & punctuation are stripped.
+  Case is ignored. Copy any column instantly.
 </div>
 
 <textarea id="textInput"
   placeholder="Paste your text here \u2014 large or small\u2026"></textarea>
 
 <div class="controls">
-  <label>Words per combo:</label>
+  <label>Combo size:</label>
   <input id="comboSize" type="number" min="1" max="12" value="1">
   <button id="findBtn">Find Frequency</button>
   <input id="filterInput" type="text" placeholder="Filter results\u2026">
+  <button id="copyWords" class="copy-btn">Copy Words</button>
+  <button id="copyCounts" class="copy-btn">Copy Counts</button>
+  <button id="copyPcts" class="copy-btn">Copy %</button>
 </div>
 
 <div class="stats" id="stats"></div>
@@ -365,125 +373,54 @@ document.getElementById("openFinder").addEventListener("click", () => {
   "use strict";
 
   /* ---------- helpers ---------- */
-
   function normalizeText(text){
-    // 1. Unicode normalization (compose characters)
     text = text.normalize("NFKC");
-    // 2. Remove ALL Unicode digits (verse numbers, page numbers, etc.)
     text = text.replace(/\\p{N}/gu, " ");
-    // 3. Lowercase using locale-aware method
     text = text.toLocaleLowerCase();
-    // 4. Replace punctuation & symbols with spaces, keep all letters
     text = text.replace(/[\\p{P}\\p{S}\\p{C}]/gu, " ");
-    // 5. Collapse whitespace
     text = text.replace(/\\s+/g, " ").trim();
     return text;
   }
 
   function tokenize(text){
-    // Matches sequences of Unicode letters (works for every alphabet)
-    // For CJK each character becomes a token \u2014 acceptable for frequency work
-    var matches = text.match(/\\p{L}+/gu);
-    return matches ? matches : [];
+    var m = text.match(/\\p{L}+/gu);
+    return m ? m : [];
   }
 
   function buildNgrams(words, n){
     if(n < 1) n = 1;
-    var ngrams = [];
+    var out = [];
     for(var i = 0; i <= words.length - n; i++){
-      ngrams.push(words.slice(i, i + n).join(" "));
+      out.push(words.slice(i, i + n).join(" "));
     }
-    return ngrams;
+    return out;
   }
 
-  /* ---------- main logic ---------- */
+  function escapeHtml(s){
+    return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
 
+  /* ---------- state ---------- */
   var findBtn    = document.getElementById("findBtn");
   var textInput  = document.getElementById("textInput");
   var comboInput = document.getElementById("comboSize");
+  var filterIn   = document.getElementById("filterInput");
   var tbody      = document.getElementById("tbody");
   var tableWrap  = document.getElementById("tableWrap");
   var statsDiv   = document.getElementById("stats");
-  var filterIn   = document.getElementById("filterInput");
 
-  var allResults = [];   // cache for filtering
+  var allResults = [];
+  var currentDisplay = [];
 
-  findBtn.addEventListener("click", function(){
-    var raw = textInput.value;
-    if(!raw.trim()){
-      alert("Please paste some text first.");
-      return;
-    }
-
-    // Show loading state
-    findBtn.disabled = true;
-    findBtn.innerHTML = '<span class="spinner"></span>Processing\u2026';
-
-    // Use setTimeout so the UI updates before heavy work
-    setTimeout(function(){
-      var comboSize = parseInt(comboInput.value, 10) || 1;
-      if(comboSize < 1) comboSize = 1;
-      if(comboSize > 12) comboSize = 12;
-      comboInput.value = comboSize;
-
-      var cleaned = normalizeText(raw);
-      var words   = tokenize(cleaned);
-
-      if(words.length === 0){
-        alert("No words found in the text.");
-        resetBtn();
-        return;
-      }
-
-      var units = buildNgrams(words, comboSize);
-      var freq  = Object.create(null);
-
-      for(var i = 0; i < units.length; i++){
-        var u = units[i];
-        freq[u] = (freq[u] || 0) + 1;
-      }
-
-      var totalUnits = units.length;
-
-      var sorted = Object.keys(freq)
-        .map(function(w){ return { word:w, count:freq[w] }; })
-        .sort(function(a,b){ return b.count - a.count; });
-
-      // Compute percentages
-      for(var j = 0; j < sorted.length; j++){
-        sorted[j].pct = ((sorted[j].count / totalUnits) * 100);
-      }
-
-      allResults = sorted;
-
-      // Stats
-      statsDiv.style.display = "block";
-      statsDiv.innerHTML =
-        'Total tokens (words/combos): <span>' + totalUnits.toLocaleString() + '</span> &nbsp;|&nbsp; ' +
-        'Unique entries: <span>' + sorted.length.toLocaleString() + '</span> &nbsp;|&nbsp; ' +
-        'Combo size: <span>' + comboSize + '</span>';
-
-      // Render
-      renderTable(sorted);
-      tableWrap.style.display = "block";
-      resetBtn();
-    }, 50);
-  });
-
-  function resetBtn(){
-    findBtn.disabled = false;
-    findBtn.textContent = "Find Frequency";
-  }
-
-  /* ---------- rendering ---------- */
-
+  /* ---------- render ---------- */
   function renderTable(data){
-    var maxCount = data.length > 0 ? data[0].count : 1;
+    currentDisplay = data; // track what's visible for copying
+    var maxCount = data.length ? data[0].count : 1;
     var html = "";
-    var limit = Math.min(data.length, 5000); // cap rows for performance
+    var limit = Math.min(data.length, 5000);
 
     for(var i = 0; i < limit; i++){
-      var d   = data[i];
+      var d = data[i];
       var pct = d.pct.toFixed(4);
       var barW = ((d.count / maxCount) * 100).toFixed(2);
       html += '<tr>' +
@@ -497,44 +434,94 @@ document.getElementById("openFinder").addEventListener("click", () => {
     }
 
     if(data.length > limit){
-      html += '<tr><td colspan="3" class="no-results">' +
-        'Showing top ' + limit.toLocaleString() + ' of ' +
-        data.length.toLocaleString() + ' results.' +
-      '</td></tr>';
+      html += '<tr><td colspan="3" class="no-results">Showing top ' + limit.toLocaleString() + ' of ' + data.length.toLocaleString() + '</td></tr>';
     }
-
-    if(data.length === 0){
+    if(!data.length){
       html = '<tr><td colspan="3" class="no-results">No results.</td></tr>';
     }
 
     tbody.innerHTML = html;
   }
 
-  function escapeHtml(str){
-    return str
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
+  /* ---------- main logic ---------- */
+  findBtn.addEventListener("click", function(){
+    var raw = textInput.value;
+    if(!raw.trim()){ alert("Please paste some text first."); return; }
+
+    findBtn.disabled = true;
+    findBtn.innerHTML = '<span class="spinner"></span>Processing\u2026';
+
+    setTimeout(function(){
+      var n = parseInt(comboInput.value, 10) || 1;
+      if(n < 1) n = 1; if(n > 12) n = 12;
+      comboInput.value = n;
+
+      var cleaned = normalizeText(raw);
+      var words   = tokenize(cleaned);
+      if(!words.length){ alert("No words found."); resetBtn(); return; }
+
+      var units = buildNgrams(words, n);
+      var freq  = Object.create(null);
+      for(var i = 0; i < units.length; i++){
+        freq[units[i]] = (freq[units[i]] || 0) + 1;
+      }
+
+      var total = units.length;
+      var sorted = Object.keys(freq).map(function(w){
+        return { word:w, count:freq[w], pct:(freq[w]/total)*100 };
+      }).sort(function(a,b){ return b.count - a.count; });
+
+      allResults = sorted;
+      statsDiv.style.display = "block";
+      statsDiv.innerHTML = 'Tokens: <span>'+total.toLocaleString()+'</span> | Unique: <span>'+sorted.length.toLocaleString()+'</span> | Combo: <span>'+n+'</span>';
+      
+      renderTable(sorted);
+      tableWrap.style.display = "block";
+      resetBtn();
+    }, 50);
+  });
+
+  function resetBtn(){
+    findBtn.disabled = false;
+    findBtn.textContent = "Find Frequency";
   }
 
-  /* ---------- live filter ---------- */
-
+  /* ---------- filter ---------- */
   filterIn.addEventListener("input", function(){
     var q = this.value.toLocaleLowerCase().trim();
-    if(!q){
-      renderTable(allResults);
-      return;
-    }
-    var filtered = allResults.filter(function(d){
-      return d.word.indexOf(q) !== -1;
-    });
-    renderTable(filtered);
+    if(!q){ renderTable(allResults); return; }
+    renderTable(allResults.filter(function(d){ return d.word.indexOf(q) !== -1; }));
   });
+
+  /* ---------- COPY COLUMNS ---------- */
+  function setupCopy(btnId, extractor){
+    document.getElementById(btnId).addEventListener("click", function(){
+      if(!currentDisplay.length) return;
+      var text = currentDisplay.map(extractor).join("\\n");
+      navigator.clipboard.writeText(text).then(() => {
+        var btn = this, orig = btn.textContent;
+        btn.textContent = "Copied!";
+        btn.classList.add("copied");
+        setTimeout(() => { btn.textContent = orig; btn.classList.remove("copied"); }, 1400);
+      }).catch(() => {
+        // Fallback for older browsers or non-HTTPS
+        var ta = document.createElement("textarea");
+        ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select();
+        document.execCommand("copy"); document.body.removeChild(ta);
+        var btn = this, orig = btn.textContent;
+        btn.textContent = "Copied!"; btn.classList.add("copied");
+        setTimeout(() => { btn.textContent = orig; btn.classList.remove("copied"); }, 1400);
+      });
+    });
+  }
+
+  setupCopy("copyWords",  d => d.word);
+  setupCopy("copyCounts", d => d.count);
+  setupCopy("copyPcts",   d => d.pct.toFixed(4) + "%");
 
 })();
 </script>
-
 </body>
 </html>`);
 
