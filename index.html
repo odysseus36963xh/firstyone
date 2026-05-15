@@ -1,344 +1,97 @@
-<!doctype html><html lang="en">
+<!doctype html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Speech Table System</title>
-
-<style>
-
-*{
-  box-sizing:border-box;
-}
-
-body{
-  margin:0;
-  font-family:Arial, Helvetica, sans-serif;
-  background:#f1f3f4;
-  color:#202124;
-  overflow:hidden;
-}
-
-/* TOP BAR */
-
-header{
-  height:56px;
-  background:#ffffff;
-  border-bottom:1px solid #dadce0;
-  display:flex;
-  align-items:center;
-  gap:10px;
-  padding:0 14px;
-  position:sticky;
-  top:0;
-  z-index:1000;
-}
-
-/* BUTTONS */
-
-button{
-  border:none;
-  background:#1a73e8;
-  color:white;
-  padding:8px 14px;
-  border-radius:4px;
-  font-size:13px;
-  font-weight:500;
-  cursor:pointer;
-  transition:0.15s;
-}
-
-button:hover{
-  background:#1765cc;
-}
-
-/* TOOLBAR */
-
-#toolbar{
-  display:none;
-  background:#ffffff;
-  border-bottom:1px solid #dadce0;
-  padding:10px 14px;
-  gap:16px;
-  flex-wrap:wrap;
-  align-items:center;
-}
-
-#uploadBox{
-  display:none;
-  background:#ffffff;
-  border-bottom:1px solid #dadce0;
-  padding:14px;
-}
-
-label{
-  font-size:13px;
-  color:#5f6368;
-  display:flex;
-  align-items:center;
-  gap:6px;
-}
-
-input,
-textarea,
-select{
-  border:1px solid #dadce0;
-  border-radius:4px;
-  padding:6px 8px;
-  font-size:13px;
-  outline:none;
-}
-
-input:focus,
-textarea:focus,
-select:focus{
-  border-color:#1a73e8;
-}
-
-textarea{
-  width:320px;
-  height:90px;
-  resize:vertical;
-  display:block;
-  margin-bottom:10px;
-}
-
-/* SHEET AREA */
-
-#sheetWrap{
-  overflow:auto;
-  height:calc(100vh - 56px);
-  background:#ffffff;
-}
-
-/* TABLE */
-
-table{
-  border-collapse:collapse;
-  table-layout:fixed;
-  background:white;
-}
-
-/* HEADERS */
-
-th{
-  border:1px solid #e0e0e0;
-  background:#f8f9fa;
-  color:#5f6368;
-  font-weight:500;
-  text-align:center;
-  height:32px;
-  min-width:100px;
-  width:100px;
-  font-size:12px;
-  position:sticky;
-  top:0;
-  z-index:20;
-}
-
-/* ROW NUMBERS */
-
-.row-head{
-  min-width:50px;
-  width:50px;
-  left:0;
-  z-index:30;
-  position:sticky;
-  background:#f8f9fa;
-}
-
-/* CELLS */
-
-td{
-  border:1px solid #e0e0e0;
-  width:100px;
-  height:32px;
-  padding:4px 8px;
-  font-size:13px;
-  text-align:left;
-  vertical-align:middle;
-  background:white;
-  position:relative;
-}
-
-/* HOVER */
-
-td:hover{
-  background:#f8fbff;
-}
-
-/* ACTIVE CELL */
-
-td:focus{
-  outline:none;
-  border:2px solid #1a73e8;
-  z-index:50;
-}
-
-/* COLUMN SELECT */
-
-.col-select{
-  width:90%;
-  border:none;
-  background:transparent;
-  font-size:11px;
-  color:#5f6368;
-}
-
-/* READING */
-
-.reading{
-  background:#fff59d !important;
-}
-
-/* SCROLLBAR */
-
-::-webkit-scrollbar{
-  width:10px;
-  height:10px;
-}
-
-::-webkit-scrollbar-track{
-  background:#f1f1f1;
-}
-
-::-webkit-scrollbar-thumb{
-  background:#c1c1c1;
-  border-radius:20px;
-}
-
-::-webkit-scrollbar-thumb:hover{
-  background:#a8a8a8;
-}
-
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Speech Table System</title>
+  <style>
+    *{box-sizing:border-box;}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f1f3f4;color:#202124;overflow:hidden;}
+    header{height:56px;background:#fff;border-bottom:1px solid #dadce0;display:flex;align-items:center;gap:10px;padding:0 14px;position:sticky;top:0;z-index:1000;}
+    button{border:none;background:#1a73e8;color:white;padding:8px 14px;border-radius:4px;font-size:13px;font-weight:500;cursor:pointer;transition:0.15s;}
+    button:hover{background:#1765cc;}
+    #toolbar{display:none;background:#fff;border-bottom:1px solid #dadce0;padding:10px 14px;gap:16px;flex-wrap:wrap;align-items:center;}
+    #uploadBox{display:none;background:#fff;border-bottom:1px solid #dadce0;padding:14px;}
+    label{font-size:13px;color:#5f6368;display:flex;align-items:center;gap:6px;}
+    input,textarea,select{border:1px solid #dadce0;border-radius:4px;padding:6px 8px;font-size:13px;outline:none;}
+    input:focus,textarea:focus,select:focus{border-color:#1a73e8;}
+    textarea{width:320px;height:90px;resize:vertical;display:block;margin-bottom:10px;}
+    #sheetWrap{overflow:auto;height:calc(100vh - 56px);background:#fff;}
+    table{border-collapse:collapse;table-layout:fixed;background:white;}
+    th{border:1px solid #e0e0e0;background:#f8f9fa;color:#5f6368;font-weight:500;text-align:center;height:32px;min-width:100px;width:100px;font-size:12px;position:sticky;top:0;z-index:20;}
+    .row-head{min-width:50px;width:50px;left:0;z-index:30;position:sticky;background:#f8f9fa;}
+    td{border:1px solid #e0e0e0;width:100px;height:32px;padding:4px 8px;font-size:13px;text-align:left;vertical-align:middle;background:white;position:relative;}
+    td:hover{background:#f8fbff;}
+    td:focus{outline:none;border:2px solid #1a73e8;z-index:50;}
+    .col-select{width:90%;border:none;background:transparent;font-size:11px;color:#5f6368;}
+    .reading{background:#fff59d !important;}
+    ::-webkit-scrollbar{width:10px;height:10px;}
+    ::-webkit-scrollbar-track{background:#f1f1f1;}
+    ::-webkit-scrollbar-thumb{background:#c1c1c1;border-radius:20px;}
+    ::-webkit-scrollbar-thumb:hover{background:#a8a8a8;}
+  </style>
 </head>
-
 <body>
 
-<!-- TOP BUTTON BAR -->
 <header>
-<button id="saveTableBtn">Save Table Data</button>
-<button onclick="saveTable()">Save Table Data</button>
-  <button onclick="toggleUpload()">Upload Column</button>
-  <button onclick="toggleReader()">Reader Options</button>
+  <button onclick="saveTable()">Save Table Data</button>
+  <button onclick="toggleUpload()">Upload Column</button>
+  <button onclick="toggleReader()">Reader Options</button>
   <button onclick="startReading()">Start Reading</button>
-<button onclick="stopReading()">Stop</button>
-
-<button id="openFinder">Frequency Finder</button>
-
+  <button onclick="stopReading()">Stop</button>
+  <button id="openFinder">Frequency Finder</button>
 </header>
 
-<!-- UPLOAD BOX -->
 <div id="uploadBox">
-  <h3>Upload Column</h3>
-
-  <textarea placeholder="Paste column data here"></textarea>
-
-  <select>
-    <option>Column A</option>
-    <option>Column B</option>
-    <option>Column C</option>
-    <option>Column D</option>
-  </select>
-
-  <button>Upload</button>
+  <h3>Upload Column</h3>
+  <textarea placeholder="Paste column data here"></textarea>
+  <select>
+    <option>Column A</option><option>Column B</option>
+    <option>Column C</option><option>Column D</option>
+  </select>
+  <button>Upload</button>
 </div>
 
 <div id="toolbar">
-
-  <label>Speed 
-    <input id="speed" type="range" min="0.5" max="2" step="0.1" value="1">
-  </label>
-
-  <label>Repeat Row
-    <input id="repeatRow" type="number" min="1" value="1">
-  </label>
-
-  <label>Repeat Table Loop
-    <input id="repeatTable" type="number" min="1" value="1">
-  </label>
-
-  <label>Repeat Cell
-    <input id="repeatCell" type="number" min="1" value="1">
-  </label>
-
-  <label>Start Cell
-    <input id="startCell" type="text" placeholder="A1">
-  </label>
-
-  <label>End Cell
-    <input id="endCell" type="text" placeholder="Z26">
-  </label>
-
-  <label>
-    Reverse Order
-    <input id="reverse" type="checkbox">
-  </label>
-
+  <label>Speed <input id="speed" type="range" min="0.5" max="2" step="0.1" value="1"></label>
+  <label>Repeat Row <input id="repeatRow" type="number" min="1" value="1"></label>
+  <label>Repeat Table Loop <input id="repeatTable" type="number" min="1" value="1"></label>
+  <label>Repeat Cell <input id="repeatCell" type="number" min="1" value="1"></label>
+  <label>Start Cell <input id="startCell" type="text" placeholder="A1"></label>
+  <label>End Cell <input id="endCell" type="text" placeholder="Z26"></label>
+  <label>Reverse Order <input id="reverse" type="checkbox"></label>
 </div>
 
-<!-- TABLE -->
 <div id="sheetWrap">
-  <table id="sheet"></table>
+  <table id="sheet"></table>
 </div>
 
 <script>
-const cols = 26;
-const rows = 26;
+  // TABLE GENERATION (runs before script.js)
+  const cols = 26, rows = 26;
+  const table = document.getElementById("sheet");
+  function colName(n) { return String.fromCharCode(65 + n); }
 
-const table = document.getElementById("sheet");
+  let header = "<tr><th></th>";
+  for (let c = 0; c < cols; c++) header += `<th>${colName(c)}</th>`;
+  header += "</tr>";
 
-// column letters
-function colName(n) {
-  return String.fromCharCode(65 + n);
-}
+  let selector = "<tr><th></th>";
+  for (let c = 0; c < cols; c++) {
+    selector += `<th><select class='col-select'><option>Off</option><option>EN</option><option>IT</option><option>ES</option><option>FR</option><option>DE</option></select></th>`;
+  }
+  selector += "</tr>";
 
-// HEADER ROW
-let header = "<tr><th></th>";
-for (let c = 0; c < cols; c++) {
-  header += `<th>${colName(c)}</th>`;
-}
-header += "</tr>";
+  table.innerHTML += header + selector;
 
-// COLUMN SELECTOR ROW (under letters)
-let selector = "<tr><th></th>";
-for (let c = 0; c < cols; c++) {
-  selector += `<th><select class='col-select'>
-    <option>Off</option>
-    <option>EN</option>
-    <option>IT</option>
-    <option>ES</option>
-    <option>FR</option>
-    <option>DE</option>
-  </select></th>`;
-}
-selector += "</tr>";
-
-table.innerHTML += header + selector;
-
-// DATA ROWS
-for (let r = 1; r <= rows; r++) {
-  let row = `<tr><th class="row-head">${r}</th>`;
-  for (let c = 0; c < cols; c++) {
-    row += `<td contenteditable="true"></td>`;
-  }
-  row += "</tr>";
-  table.innerHTML += row;
-}
-
-// UI toggles (structure only)
-function toggleUpload() {
-  const box = document.getElementById("uploadBox");
-  box.style.display = box.style.display === "block" ? "none" : "block";
-}
-
-function toggleReader() {
-  const bar = document.getElementById("toolbar");
-  bar.style.display = bar.style.display === "flex" ? "none" : "flex";
-}
+  for (let r = 1; r <= rows; r++) {
+    let row = `<tr><th class="row-head">${r}</th>`;
+    for (let c = 0; c < cols; c++) row += `<td contenteditable="true"></td>`;
+    row += "</tr>";
+    table.innerHTML += row;
+  }
 </script>
 
-  <script src="script.js"></script>
-
+<script src="script.js"></script>
 </body>
 </html>
