@@ -302,3 +302,227 @@ function toggleReader() {
   if (!bar) return;
   bar.style.display = bar.style.display === "flex" ? "none" : "flex";
 }
+
+
+document.getElementById("openFinder").addEventListener("click", () => {
+
+    const newTab = window.open("", "_blank");
+
+    newTab.document.write(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <title>Frequency Finder</title>
+
+    <style>
+        body{
+            font-family:Arial,sans-serif;
+            background:#101010;
+            color:white;
+            padding:20px;
+        }
+
+        textarea{
+            width:100%;
+            height:300px;
+            padding:15px;
+            font-size:16px;
+            border-radius:10px;
+            border:none;
+            resize:vertical;
+            margin-top:10px;
+        }
+
+        input{
+            padding:10px;
+            width:260px;
+            font-size:16px;
+            border:none;
+            border-radius:8px;
+            margin-top:10px;
+        }
+
+        button{
+            background:#2b7cff;
+            color:white;
+            border:none;
+            padding:12px 20px;
+            border-radius:10px;
+            cursor:pointer;
+            font-size:17px;
+            margin-top:10px;
+        }
+
+        button:hover{
+            background:#1e63da;
+        }
+
+        table{
+            width:100%;
+            border-collapse:collapse;
+            margin-top:25px;
+            background:#1a1a1a;
+        }
+
+        th, td{
+            border:1px solid #333;
+            padding:12px;
+            text-align:left;
+        }
+
+        th{
+            background:#222;
+        }
+
+        tr:nth-child(even){
+            background:#151515;
+        }
+
+        h1{
+            color:#61a8ff;
+        }
+
+        .small{
+            color:#bbb;
+            margin-bottom:15px;
+        }
+    </style>
+
+    </head>
+
+    <body>
+
+    <h1>Frequency Finder</h1>
+
+    <div class="small">
+        Works with English, Arabic, Chinese, Hindi, Russian, Georgian, and most world alphabets.
+    </div>
+
+    <textarea id="textInput"
+    placeholder="Paste large or small text here..."></textarea>
+
+    <br>
+
+    <input id="comboSize" type="number" min="1" max="10" value="1"
+    placeholder="Words per combo">
+
+    <br>
+
+    <button id="findBtn">Find Frequency</button>
+
+    <table id="resultTable">
+        <thead>
+            <tr>
+                <th>Word / Combination</th>
+                <th>Total Appearances</th>
+                <th>Percentage of Text</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+
+    function normalizeText(text){
+
+        // Unicode normalize
+        text = text.normalize("NFKC");
+
+        // Remove digits from every language
+        text = text.replace(/[\\p{N}]/gu, " ");
+
+        // Lowercase safely
+        text = text.toLocaleLowerCase();
+
+        // Remove punctuation/symbols but preserve letters from all languages
+        text = text.replace(/[\\p{P}\\p{S}]/gu, " ");
+
+        // Collapse spaces
+        text = text.replace(/\\s+/g, " ").trim();
+
+        return text;
+    }
+
+    function tokenize(text){
+
+        // Match all Unicode letters
+        const words = text.match(/[\\p{L}]+/gu);
+
+        return words || [];
+    }
+
+    function generateCombinations(words, size){
+
+        const combos = [];
+
+        for(let i = 0; i <= words.length - size; i++){
+
+            const combo = words.slice(i, i + size).join(" ");
+
+            combos.push(combo);
+        }
+
+        return combos;
+    }
+
+    document.getElementById("findBtn").addEventListener("click", () => {
+
+        const rawText = document.getElementById("textInput").value;
+
+        const comboSize =
+            parseInt(document.getElementById("comboSize").value) || 1;
+
+        if(!rawText.trim()){
+            alert("Please paste text first.");
+            return;
+        }
+
+        const cleaned = normalizeText(rawText);
+
+        const words = tokenize(cleaned);
+
+        const units = generateCombinations(words, comboSize);
+
+        const frequency = {};
+
+        for(const unit of units){
+
+            frequency[unit] = (frequency[unit] || 0) + 1;
+        }
+
+        const totalUnits = units.length;
+
+        const sorted = Object.entries(frequency)
+            .sort((a,b) => b[1] - a[1]);
+
+        const tbody =
+            document.querySelector("#resultTable tbody");
+
+        tbody.innerHTML = "";
+
+        sorted.forEach(([word, count]) => {
+
+            const percentage =
+                ((count / totalUnits) * 100).toFixed(4);
+
+            const row = document.createElement("tr");
+
+            row.innerHTML = \`
+                <td>\${word}</td>
+                <td>\${count}</td>
+                <td>\${percentage}%</td>
+            \`;
+
+            tbody.appendChild(row);
+        });
+
+    });
+
+    </script>
+
+    </body>
+    </html>
+    `);
+
+});
