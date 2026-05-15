@@ -308,333 +308,328 @@ document.getElementById("openFinder").addEventListener("click", () => {
 
     const newTab = window.open("", "_blank");
 
+i tyhink i put ur blocks in wrong pleas its noit working please fix this if placement was wrong asnd giv me the full new arragment of only wut i giv u now:                     
     newTab.document.write(`
-<!DOCTYPE html>
-<html lang="en">
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <title>Frequency Finder</title>
 
-<head>
-<meta charset="UTF-8">
-<title>Frequency Finder</title>
+    <style>
+        body{
+            font-family:Arial,sans-serif;
+            background:#101010;
+            color:white;
+            padding:20px;
+        }
 
-<style>
+        textarea{
+            width:100%;
+            height:300px;
+            padding:15px;
+            font-size:16px;
+            border-radius:10px;
+            border:none;
+            resize:vertical;
+            margin-top:10px;
+        }
 
-body{
-    font-family:Arial,sans-serif;
-    background:#101010;
-    color:white;
-    padding:20px;
-}
+        input{
+            padding:10px;
+            width:260px;
+            font-size:16px;
+            border:none;
+            border-radius:8px;
+            margin-top:10px;
+        }
 
-textarea{
-    width:100%;
-    height:300px;
-    padding:15px;
-    font-size:16px;
-    border-radius:10px;
-    border:none;
-    resize:vertical;
-    margin-top:10px;
-}
+        button{
+            background:#2b7cff;
+            color:white;
+            border:none;
+            padding:12px 20px;
+            border-radius:10px;
+            cursor:pointer;
+            font-size:17px;
+            margin-top:10px;
+        }
 
-input{
-    padding:10px;
-    width:260px;
-    font-size:16px;
-    border:none;
-    border-radius:8px;
-    margin-top:10px;
-}
+        button:hover{
+            background:#1e63da;
+        }
 
-button{
-    background:#2b7cff;
-    color:white;
-    border:none;
-    padding:12px 20px;
-    border-radius:10px;
-    cursor:pointer;
-    font-size:17px;
-    margin-top:10px;
-}
+        table{
+            width:100%;
+            border-collapse:collapse;
+            margin-top:25px;
+            background:#1a1a1a;
+        }
 
-button:hover{
-    background:#1e63da;
-}
+        th, td{
+            border:1px solid #333;
+            padding:12px;
+            text-align:left;
+        }
 
-table{
-    width:100%;
-    border-collapse:collapse;
-    margin-top:25px;
-    background:#1a1a1a;
-}
+        th{
+            background:#222;
+        }
 
-th, td{
-    border:1px solid #333;
-    padding:12px;
-    text-align:left;
-}
+        tr:nth-child(even){
+            background:#151515;
+        }
 
-th{
-    background:#222;
-}
+        h1{
+            color:#61a8ff;
+        }
 
-tr:nth-child(even){
-    background:#151515;
-}
+        .small{
+            color:#bbb;
+            margin-bottom:15px;
+        }
+    </style>
 
-h1{
-    color:#61a8ff;
-}
+    </head>
 
-.small{
-    color:#bbb;
-    margin-bottom:15px;
-}
+    <body>
 
-</style>
+    <h1>Frequency Finder</h1>
 
-</head>
-
-<body>
-
-<h1>Frequency Finder</h1>
-
-<div class="small">
-Works with English, Arabic, Chinese, Hindi, Russian, Georgian, and most world alphabets.
-</div>
-
+    <div class="small">
+        Works with English, Arabic, Chinese, Hindi, Russian, Georgian, and most world alphabets.
+    </div>
 <div style="margin-top:20px;">
 
-<button id="toggleLanguages"
-style="
-background:#28a745;
-color:white;
-border:none;
-padding:10px 18px;
-border-radius:8px;
-cursor:pointer;
-font-size:16px;
-">
-Show Compatible Languages
-</button>
+    <button id="toggleLanguages"
+    style="
+    background:#28a745;
+    color:white;
+    border:none;
+    padding:10px 18px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:16px;
+    ">
+    Show Compatible Languages
+    </button>
 
-<div id="languageBox"
-style="
-display:none;
-margin-top:15px;
-max-height:350px;
-overflow-y:auto;
-border:1px solid #333;
-border-radius:10px;
-">
+    <div id="languageBox"
+    style="
+    display:none;
+    margin-top:15px;
+    max-height:350px;
+    overflow-y:auto;
+    border:1px solid #333;
+    border-radius:10px;
+    ">
 
-<table style="
-width:100%;
-border-collapse:collapse;
-background:#181818;
-color:white;
-">
+        <table style="
+        width:100%;
+        border-collapse:collapse;
+        background:#181818;
+        color:white;
+        ">
 
-<thead>
-<tr>
-<th style="padding:10px;border:1px solid #333;">Language</th>
-<th style="padding:10px;border:1px solid #333;">Script</th>
-<th style="padding:10px;border:1px solid #333;">Example</th>
-</tr>
-</thead>
+            <thead>
+                <tr>
+                    <th style="padding:10px;border:1px solid #333;">
+                    Language
+                    </th>
 
-<tbody>
+                    <th style="padding:10px;border:1px solid #333;">
+                    Script
+                    </th>
 
-<tr><td>English</td><td>Latin</td><td>Hello world</td></tr>
-<tr><td>Spanish</td><td>Latin</td><td>Hola mundo</td></tr>
-<tr><td>French</td><td>Latin</td><td>Bonjour monde</td></tr>
-<tr><td>German</td><td>Latin</td><td>Hallo Welt</td></tr>
-<tr><td>Italian</td><td>Latin</td><td>Ciao mondo</td></tr>
-<tr><td>Portuguese</td><td>Latin</td><td>Olá mundo</td></tr>
-<tr><td>Dutch</td><td>Latin</td><td>Hallo wereld</td></tr>
-<tr><td>Polish</td><td>Latin</td><td>Witaj świecie</td></tr>
-<tr><td>Turkish</td><td>Latin</td><td>Merhaba dünya</td></tr>
-<tr><td>Vietnamese</td><td>Latin</td><td>Xin chào</td></tr>
+                    <th style="padding:10px;border:1px solid #333;">
+                    Example
+                    </th>
+                </tr>
+            </thead>
 
-<tr><td>Russian</td><td>Cyrillic</td><td>Привет мир</td></tr>
-<tr><td>Ukrainian</td><td>Cyrillic</td><td>Привіт світ</td></tr>
-<tr><td>Bulgarian</td><td>Cyrillic</td><td>Здравей свят</td></tr>
-<tr><td>Serbian</td><td>Cyrillic</td><td>Здраво свете</td></tr>
+            <tbody>
 
-<tr><td>Arabic</td><td>Arabic</td><td>مرحبا بالعالم</td></tr>
-<tr><td>Persian</td><td>Arabic</td><td>سلام دنیا</td></tr>
-<tr><td>Urdu</td><td>Arabic</td><td>ہیلو دنیا</td></tr>
+                <tr><td>English</td><td>Latin</td><td>Hello world</td></tr>
+                <tr><td>Spanish</td><td>Latin</td><td>Hola mundo</td></tr>
+                <tr><td>French</td><td>Latin</td><td>Bonjour monde</td></tr>
+                <tr><td>German</td><td>Latin</td><td>Hallo Welt</td></tr>
+                <tr><td>Italian</td><td>Latin</td><td>Ciao mondo</td></tr>
+                <tr><td>Portuguese</td><td>Latin</td><td>Olá mundo</td></tr>
+                <tr><td>Dutch</td><td>Latin</td><td>Hallo wereld</td></tr>
+                <tr><td>Polish</td><td>Latin</td><td>Witaj świecie</td></tr>
+                <tr><td>Turkish</td><td>Latin</td><td>Merhaba dünya</td></tr>
+                <tr><td>Vietnamese</td><td>Latin</td><td>Xin chào</td></tr>
 
-<tr><td>Hebrew</td><td>Hebrew</td><td>שלום עולם</td></tr>
+                <tr><td>Russian</td><td>Cyrillic</td><td>Привет мир</td></tr>
+                <tr><td>Ukrainian</td><td>Cyrillic</td><td>Привіт світ</td></tr>
+                <tr><td>Bulgarian</td><td>Cyrillic</td><td>Здравей свят</td></tr>
+                <tr><td>Serbian</td><td>Cyrillic</td><td>Здраво свете</td></tr>
 
-<tr><td>Hindi</td><td>Devanagari</td><td>नमस्ते दुनिया</td></tr>
-<tr><td>Sanskrit</td><td>Devanagari</td><td>नमस्ते</td></tr>
-<tr><td>Marathi</td><td>Devanagari</td><td>नमस्कार</td></tr>
-<tr><td>Nepali</td><td>Devanagari</td><td>नमस्ते</td></tr>
+                <tr><td>Arabic</td><td>Arabic</td><td>مرحبا بالعالم</td></tr>
+                <tr><td>Persian</td><td>Arabic</td><td>سلام دنیا</td></tr>
+                <tr><td>Urdu</td><td>Arabic</td><td>ہیلو دنیا</td></tr>
 
-<tr><td>Chinese</td><td>Han</td><td>你好世界</td></tr>
-<tr><td>Japanese</td><td>Kana/Kanji</td><td>こんにちは世界</td></tr>
-<tr><td>Korean</td><td>Hangul</td><td>안녕하세요</td></tr>
+                <tr><td>Hebrew</td><td>Hebrew</td><td>שלום עולם</td></tr>
 
-<tr><td>Thai</td><td>Thai</td><td>สวัสดี</td></tr>
-<tr><td>Lao</td><td>Lao</td><td>ສະບາຍດີ</td></tr>
-<tr><td>Khmer</td><td>Khmer</td><td>សួស្តី</td></tr>
+                <tr><td>Hindi</td><td>Devanagari</td><td>नमस्ते दुनिया</td></tr>
+                <tr><td>Sanskrit</td><td>Devanagari</td><td>नमस्ते</td></tr>
+                <tr><td>Marathi</td><td>Devanagari</td><td>नमस्कार</td></tr>
+                <tr><td>Nepali</td><td>Devanagari</td><td>नमस्ते</td></tr>
 
-<tr><td>Georgian</td><td>Georgian</td><td>გამარჯობა</td></tr>
-<tr><td>Armenian</td><td>Armenian</td><td>Բարեւ աշխարհ</td></tr>
+                <tr><td>Chinese</td><td>Han</td><td>你好世界</td></tr>
+                <tr><td>Japanese</td><td>Kana/Kanji</td><td>こんにちは世界</td></tr>
+                <tr><td>Korean</td><td>Hangul</td><td>안녕하세요</td></tr>
 
-<tr><td>Greek</td><td>Greek</td><td>Γειά σου κόσμε</td></tr>
+                <tr><td>Thai</td><td>Thai</td><td>สวัสดี</td></tr>
+                <tr><td>Lao</td><td>Lao</td><td>ສະບາຍດີ</td></tr>
+                <tr><td>Khmer</td><td>Khmer</td><td>សួស្តី</td></tr>
 
-<tr><td>Tamil</td><td>Tamil</td><td>வணக்கம்</td></tr>
-<tr><td>Telugu</td><td>Telugu</td><td>హలో</td></tr>
-<tr><td>Kannada</td><td>Kannada</td><td>ಹಲೋ</td></tr>
-<tr><td>Malayalam</td><td>Malayalam</td><td>ഹലോ</td></tr>
-<tr><td>Bengali</td><td>Bengali</td><td>হ্যালো</td></tr>
-<tr><td>Punjabi</td><td>Gurmukhi</td><td>ਸਤ ਸ੍ਰੀ ਅਕਾਲ</td></tr>
+                <tr><td>Georgian</td><td>Georgian</td><td>გამარჯობა</td></tr>
+                <tr><td>Armenian</td><td>Armenian</td><td>Բարեւ աշխարհ</td></tr>
 
-<tr><td>Swahili</td><td>Latin</td><td>Habari dunia</td></tr>
-<tr><td>Zulu</td><td>Latin</td><td>Sawubona</td></tr>
+                <tr><td>Greek</td><td>Greek</td><td>Γειά σου κόσμε</td></tr>
 
-</tbody>
+                <tr><td>Tamil</td><td>Tamil</td><td>வணக்கம்</td></tr>
+                <tr><td>Telugu</td><td>Telugu</td><td>హలో</td></tr>
+                <tr><td>Kannada</td><td>Kannada</td><td>ಹಲೋ</td></tr>
+                <tr><td>Malayalam</td><td>Malayalam</td><td>ഹലോ</td></tr>
+                <tr><td>Bengali</td><td>Bengali</td><td>হ্যালো</td></tr>
+                <tr><td>Punjabi</td><td>Gurmukhi</td><td>ਸਤ ਸ੍ਰੀ ਅਕਾਲ</td></tr>
 
-</table>
+                <tr><td>Swahili</td><td>Latin</td><td>Habari dunia</td></tr>
+                <tr><td>Zulu</td><td>Latin</td><td>Sawubona</td></tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
 
 </div>
+    <textarea id="textInput"
+    placeholder="Paste large or small text here..."></textarea>
 
-</div>
+    <br>
 
-<textarea id="textInput"
-placeholder="Paste large or small text here..."></textarea>
+    <input id="comboSize" type="number" min="1" max="10" value="1"
+    placeholder="Words per combo">
 
-<br>
+    <br>
 
-<input id="comboSize"
-type="number"
-min="1"
-max="10"
-value="1"
-placeholder="Words per combo">
+    <button id="findBtn">Find Frequency</button>
 
-<br>
+    <table id="resultTable">
+        <thead>
+            <tr>
+                <th>Word / Combination</th>
+                <th>Total Appearances</th>
+                <th>Percentage of Text</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
 
-<button id="findBtn">Find Frequency</button>
+    <script>
 
-<table id="resultTable">
+    function normalizeText(text){
 
-<thead>
-<tr>
-<th>Word / Combination</th>
-<th>Total Appearances</th>
-<th>Percentage of Text</th>
-</tr>
-</thead>
+        // Unicode normalize
+        text = text.normalize("NFKC");
 
-<tbody></tbody>
+        // Remove digits from every language
+        text = text.replace(/[\\p{N}]/gu, " ");
 
-</table>
+        // Lowercase safely
+        text = text.toLocaleLowerCase();
 
-<script>
+        // Remove punctuation/symbols but preserve letters from all languages
+        text = text.replace(/[\\p{P}\\p{S}]/gu, " ");
 
-function normalizeText(text){
+        // Collapse spaces
+        text = text.replace(/\\s+/g, " ").trim();
 
-    text = text.normalize("NFKC");
-
-    text = text.replace(/[\\\\p{N}]/gu, " ");
-
-    text = text.toLocaleLowerCase();
-
-    text = text.replace(/[\\\\p{P}\\\\p{S}]/gu, " ");
-
-    text = text.replace(/\\\\s+/g, " ").trim();
-
-    return text;
-}
-
-function tokenize(text){
-
-    const words = text.match(/[\\\\p{L}]+/gu);
-
-    return words || [];
-}
-
-function generateCombinations(words, size){
-
-    const combos = [];
-
-    for(let i = 0; i <= words.length - size; i++){
-
-        const combo = words.slice(i, i + size).join(" ");
-
-        combos.push(combo);
+        return text;
     }
 
-    return combos;
-}
+    function tokenize(text){
 
-document.getElementById("findBtn")
-.addEventListener("click", () => {
+        // Match all Unicode letters
+        const words = text.match(/[\\p{L}]+/gu);
 
-    const rawText =
-        document.getElementById("textInput").value;
-
-    const comboSize =
-        parseInt(document.getElementById("comboSize").value) || 1;
-
-    if(!rawText.trim()){
-
-        alert("Please paste text first.");
-
-        return;
+        return words || [];
     }
 
-    const cleaned = normalizeText(rawText);
+    function generateCombinations(words, size){
 
-    const words = tokenize(cleaned);
+        const combos = [];
 
-    const units =
-        generateCombinations(words, comboSize);
+        for(let i = 0; i <= words.length - size; i++){
 
-    const frequency = {};
+            const combo = words.slice(i, i + size).join(" ");
 
-    for(const unit of units){
+            combos.push(combo);
+        }
 
-        frequency[unit] =
-            (frequency[unit] || 0) + 1;
+        return combos;
     }
 
-    const totalUnits = units.length;
+    document.getElementById("findBtn").addEventListener("click", () => {
 
-    const sorted =
-        Object.entries(frequency)
-        .sort((a,b) => b[1] - a[1]);
+        const rawText = document.getElementById("textInput").value;
 
-    const tbody =
-        document.querySelector("#resultTable tbody");
+        const comboSize =
+            parseInt(document.getElementById("comboSize").value) || 1;
 
-    tbody.innerHTML = "";
+        if(!rawText.trim()){
+            alert("Please paste text first.");
+            return;
+        }
 
-    sorted.forEach(([word, count]) => {
+        const cleaned = normalizeText(rawText);
 
-        const percentage =
-            ((count / totalUnits) * 100).toFixed(4);
+        const words = tokenize(cleaned);
 
-        const row =
-            document.createElement("tr");
+        const units = generateCombinations(words, comboSize);
 
-        row.innerHTML =
-            "<td>" + word + "</td>" +
-            "<td>" + count + "</td>" +
-            "<td>" + percentage + "%</td>";
+        const frequency = {};
 
-        tbody.appendChild(row);
+        for(const unit of units){
+
+            frequency[unit] = (frequency[unit] || 0) + 1;
+        }
+
+        const totalUnits = units.length;
+
+        const sorted = Object.entries(frequency)
+            .sort((a,b) => b[1] - a[1]);
+
+        const tbody =
+            document.querySelector("#resultTable tbody");
+
+        tbody.innerHTML = "";
+
+        sorted.forEach(([word, count]) => {
+
+            const percentage =
+                ((count / totalUnits) * 100).toFixed(4);
+
+            const row = document.createElement("tr");
+
+            row.innerHTML = \`
+                <td>\${word}</td>
+                <td>\${count}</td>
+                <td>\${percentage}%</td>
+            \`;
+
+            tbody.appendChild(row);
+        });
+
     });
 
-});
-
-document.getElementById("toggleLanguages")
+    document.getElementById("toggleLanguages")
 .addEventListener("click", () => {
 
-    const box =
-        document.getElementById("languageBox");
+    const box = document.getElementById("languageBox");
 
     if(box.style.display === "none"){
 
@@ -647,8 +642,10 @@ document.getElementById("toggleLanguages")
 
 });
 
-</script>
+    </script>
 
-</body>
-</html>
-`);
+    </body>
+    </html>
+    `);
+
+});
