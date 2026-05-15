@@ -73,7 +73,7 @@ button:hover{
 label{
   font-size:13px;
   color:#5f6368;
-  displaySAY:flex;
+  display:flex;
   align-items:center;
   gap:6px;
 }
@@ -93,7 +93,7 @@ textarea:focus,
 select:focus{
   border-color:#1a73e8;
 }
-SAY
+
 textarea{
   width:320px;
   height:90px;
@@ -217,13 +217,12 @@ td:focus{
 
 <!-- TOP BUTTON BAR -->
 <header>
+<button id="saveTableBtn">Save Table Data</button>
 <button onclick="saveTable()">Save Table Data</button>
   <button onclick="toggleUpload()">Upload Column</button>
   <button onclick="toggleReader()">Reader Options</button>
   <button onclick="startReading()">Start Reading</button>
 <button onclick="stopReading()">Stop</button>
-
-<button id="openFinder">Frequency Finder</button>
 </header>
 
 <!-- UPLOAD BOX -->
