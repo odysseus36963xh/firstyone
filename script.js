@@ -224,232 +224,319 @@ function toggleReader() {
 } 
 
 
-
-// ===============================
-// FREQUENCY FINDER (UNIVERSAL LANGUAGE SUPPORT)
-// ===============================
-// ===============================
-// FREQUENCY FINDER (BULLETPROOF)
-// ===============================
 document.getElementById("openFinder").addEventListener("click", () => {
+  const newTab = window.open("", "_blank");
+  if (!newTab) {
+    alert("Allow pop-ups for this site to open the Frequency Finder.");
+    return;
+  }
 
-    const newTab = window.open("", "_blank");
+  newTab.document.write(`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Frequency Finder</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Segoe UI',Arial,sans-serif;
+    background:#0d0d0d;color:#e0e0e0;
+    padding:24px;min-height:100vh;
+  }
+  h1{color:#5ea4ff;margin-bottom:6px;font-size:28px}
+  .subtitle{color:#888;margin-bottom:18px;font-size:14px;line-height:1.5}
+  textarea{
+    width:100%;height:320px;padding:16px;
+    font-size:15px;line-height:1.6;
+    border-radius:10px;border:2px solid #222;
+    background:#141414;color:#e0e0e0;
+    resize:vertical;outline:none;
+    transition:border-color .2s;
+  }
+  textarea:focus{border-color:#5ea4ff}
+  .controls{
+    display:flex;flex-wrap:wrap;gap:12px;
+    align-items:center;margin-top:14px;
+  }
+  .controls label{color:#aaa;font-size:14px}
+  .controls input[type=number]{
+    width:70px;padding:10px;font-size:15px;
+    border:none;border-radius:8px;
+    background:#1a1a1a;color:#e0e0e0;text-align:center;
+  }
+  button{
+    background:linear-gradient(135deg,#2b7cff,#1a5ec2);
+    color:#fff;border:none;padding:12px 28px;
+    border-radius:10px;cursor:pointer;font-size:16px;
+    font-weight:600;transition:all .2s;
+  }
+  button:hover{transform:translateY(-1px);box-shadow:0 4px 18px #2b7cff55}
+  button:active{transform:translateY(0)}
+  button:disabled{opacity:.5;cursor:wait;transform:none;box-shadow:none}
+  .stats{
+    margin-top:18px;padding:12px 16px;
+    background:#161616;border-radius:8px;
+    font-size:13px;color:#999;display:none;
+  }
+  .stats span{color:#5ea4ff;font-weight:700}
+  .table-wrap{
+    margin-top:20px;max-height:60vh;
+    overflow-y:auto;border-radius:10px;
+    border:1px solid #222;display:none;
+  }
+  table{width:100%;border-collapse:collapse;background:#111}
+  thead{position:sticky;top:0;z-index:2}
+  th{
+    background:#1e1e1e;color:#5ea4ff;
+    padding:14px 16px;text-align:left;
+    font-size:14px;border-bottom:2px solid #333;
+  }
+  td{
+    padding:10px 16px;border-bottom:1px solid #1a1a1a;
+    font-size:14px;
+  }
+  tr:hover td{background:#1a2233}
+  tr:nth-child(even) td{background:#0f0f0f}
+  tr:nth-child(even):hover td{background:#1a2233}
+  .rank{color:#555;font-size:12px;margin-right:8px}
+  .bar-cell{position:relative}
+  .bar{
+    position:absolute;left:0;top:0;bottom:0;
+    background:#2b7cff15;border-radius:3px;
+    pointer-events:none;transition:width .4s ease;
+  }
+  .bar-text{position:relative;z-index:1}
+  .no-results{
+    text-align:center;padding:40px;color:#555;font-size:15px;
+  }
+  #filterInput{
+    padding:10px 14px;width:260px;font-size:14px;
+    border:none;border-radius:8px;
+    background:#1a1a1a;color:#e0e0e0;
+  }
+  #filterInput::placeholder{color:#555}
+  .spinner{
+    display:inline-block;width:18px;height:18px;
+    border:3px solid #ffffff44;border-top-color:#fff;
+    border-radius:50%;animation:spin .6s linear infinite;
+    vertical-align:middle;margin-right:8px;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
 
-    newTab.document.write(`
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-    <meta charset="UTF-8">
-    <title>Frequency Finder</title>
+<h1>\u{1F50D} Frequency Finder</h1>
+<div class="subtitle">
+  Paste any text \u2014 Bible verses, Bhagavad Gita, Quran, Tao Te Ching,
+  Tolstoy poems, or anything in any language (English, Arabic, Chinese,
+  Russian, Georgian, Hindi, etc.). Digits and punctuation are stripped
+  automatically. Case is ignored.
+</div>
 
-    <style>
-        body{
-            font-family:Arial,sans-serif;
-            background:#101010;
-            color:white;
-            padding:20px;
-        }
+<textarea id="textInput"
+  placeholder="Paste your text here \u2014 large or small\u2026"></textarea>
 
-        textarea{
-            width:100%;
-            height:300px;
-            padding:15px;
-            font-size:16px;
-            border-radius:10px;
-            border:none;
-            resize:vertical;
-            margin-top:10px;
-        }
+<div class="controls">
+  <label>Words per combo:</label>
+  <input id="comboSize" type="number" min="1" max="12" value="1">
+  <button id="findBtn">Find Frequency</button>
+  <input id="filterInput" type="text" placeholder="Filter results\u2026">
+</div>
 
-        input{
-            padding:10px;
-            width:260px;
-            font-size:16px;
-            border:none;
-            border-radius:8px;
-            margin-top:10px;
-        }
+<div class="stats" id="stats"></div>
 
-        button{
-            background:#2b7cff;
-            color:white;
-            border:none;
-            padding:12px 20px;
-            border-radius:10px;
-            cursor:pointer;
-            font-size:17px;
-            margin-top:10px;
-        }
+<div class="table-wrap" id="tableWrap">
+  <table id="resultTable">
+    <thead>
+      <tr>
+        <th style="width:40%">Word / Combination</th>
+        <th style="width:20%">Count</th>
+        <th style="width:40%">% of Text</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
 
-        button:hover{
-            background:#1e63da;
-        }
+<script>
+(function(){
+  "use strict";
 
-        table{
-            width:100%;
-            border-collapse:collapse;
-            margin-top:25px;
-            background:#1a1a1a;
-        }
+  /* ---------- helpers ---------- */
 
-        th, td{
-            border:1px solid #333;
-            padding:12px;
-            text-align:left;
-        }
+  function normalizeText(text){
+    // 1. Unicode normalization (compose characters)
+    text = text.normalize("NFKC");
+    // 2. Remove ALL Unicode digits (verse numbers, page numbers, etc.)
+    text = text.replace(/\\p{N}/gu, " ");
+    // 3. Lowercase using locale-aware method
+    text = text.toLocaleLowerCase();
+    // 4. Replace punctuation & symbols with spaces, keep all letters
+    text = text.replace(/[\\p{P}\\p{S}\\p{C}]/gu, " ");
+    // 5. Collapse whitespace
+    text = text.replace(/\\s+/g, " ").trim();
+    return text;
+  }
 
-        th{
-            background:#222;
-        }
+  function tokenize(text){
+    // Matches sequences of Unicode letters (works for every alphabet)
+    // For CJK each character becomes a token \u2014 acceptable for frequency work
+    var matches = text.match(/\\p{L}+/gu);
+    return matches ? matches : [];
+  }
 
-        tr:nth-child(even){
-            background:#151515;
-        }
+  function buildNgrams(words, n){
+    if(n < 1) n = 1;
+    var ngrams = [];
+    for(var i = 0; i <= words.length - n; i++){
+      ngrams.push(words.slice(i, i + n).join(" "));
+    }
+    return ngrams;
+  }
 
-        h1{
-            color:#61a8ff;
-        }
+  /* ---------- main logic ---------- */
 
-        .small{
-            color:#bbb;
-            margin-bottom:15px;
-        }
-    </style>
+  var findBtn    = document.getElementById("findBtn");
+  var textInput  = document.getElementById("textInput");
+  var comboInput = document.getElementById("comboSize");
+  var tbody      = document.getElementById("tbody");
+  var tableWrap  = document.getElementById("tableWrap");
+  var statsDiv   = document.getElementById("stats");
+  var filterIn   = document.getElementById("filterInput");
 
-    </head>
+  var allResults = [];   // cache for filtering
 
-    <body>
-
-    <h1>Frequency Finder</h1>
-
-    <div class="small">
-        Works with English, Arabic, Chinese, Hindi, Russian, Georgian, and most world alphabets.
-    </div>
-
-    <textarea id="textInput"
-    placeholder="Paste large or small text here..."></textarea>
-
-    <br>
-
-    <input id="comboSize" type="number" min="1" max="10" value="1"
-    placeholder="Words per combo">
-
-    <br>
-
-    <button id="findBtn">Find Frequency</button>
-
-    <table id="resultTable">
-        <thead>
-            <tr>
-                <th>Word / Combination</th>
-                <th>Total Appearances</th>
-                <th>Percentage of Text</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-
-    <script>
-
-    function normalizeText(text){
-
-        // Unicode normalize
-        text = text.normalize("NFKC");
-
-        // Remove digits from every language
-        text = text.replace(/[\\p{N}]/gu, " ");
-
-        // Lowercase safely
-        text = text.toLocaleLowerCase();
-
-        // Remove punctuation/symbols but preserve letters from all languages
-        text = text.replace(/[\\p{P}\\p{S}]/gu, " ");
-
-        // Collapse spaces
-        text = text.replace(/\\s+/g, " ").trim();
-
-        return text;
+  findBtn.addEventListener("click", function(){
+    var raw = textInput.value;
+    if(!raw.trim()){
+      alert("Please paste some text first.");
+      return;
     }
 
-    function tokenize(text){
+    // Show loading state
+    findBtn.disabled = true;
+    findBtn.innerHTML = '<span class="spinner"></span>Processing\u2026';
 
-        // Match all Unicode letters
-        const words = text.match(/[\\p{L}]+/gu);
+    // Use setTimeout so the UI updates before heavy work
+    setTimeout(function(){
+      var comboSize = parseInt(comboInput.value, 10) || 1;
+      if(comboSize < 1) comboSize = 1;
+      if(comboSize > 12) comboSize = 12;
+      comboInput.value = comboSize;
 
-        return words || [];
+      var cleaned = normalizeText(raw);
+      var words   = tokenize(cleaned);
+
+      if(words.length === 0){
+        alert("No words found in the text.");
+        resetBtn();
+        return;
+      }
+
+      var units = buildNgrams(words, comboSize);
+      var freq  = Object.create(null);
+
+      for(var i = 0; i < units.length; i++){
+        var u = units[i];
+        freq[u] = (freq[u] || 0) + 1;
+      }
+
+      var totalUnits = units.length;
+
+      var sorted = Object.keys(freq)
+        .map(function(w){ return { word:w, count:freq[w] }; })
+        .sort(function(a,b){ return b.count - a.count; });
+
+      // Compute percentages
+      for(var j = 0; j < sorted.length; j++){
+        sorted[j].pct = ((sorted[j].count / totalUnits) * 100);
+      }
+
+      allResults = sorted;
+
+      // Stats
+      statsDiv.style.display = "block";
+      statsDiv.innerHTML =
+        'Total tokens (words/combos): <span>' + totalUnits.toLocaleString() + '</span> &nbsp;|&nbsp; ' +
+        'Unique entries: <span>' + sorted.length.toLocaleString() + '</span> &nbsp;|&nbsp; ' +
+        'Combo size: <span>' + comboSize + '</span>';
+
+      // Render
+      renderTable(sorted);
+      tableWrap.style.display = "block";
+      resetBtn();
+    }, 50);
+  });
+
+  function resetBtn(){
+    findBtn.disabled = false;
+    findBtn.textContent = "Find Frequency";
+  }
+
+  /* ---------- rendering ---------- */
+
+  function renderTable(data){
+    var maxCount = data.length > 0 ? data[0].count : 1;
+    var html = "";
+    var limit = Math.min(data.length, 5000); // cap rows for performance
+
+    for(var i = 0; i < limit; i++){
+      var d   = data[i];
+      var pct = d.pct.toFixed(4);
+      var barW = ((d.count / maxCount) * 100).toFixed(2);
+      html += '<tr>' +
+        '<td><span class="rank">#' + (i+1) + '</span>' + escapeHtml(d.word) + '</td>' +
+        '<td>' + d.count.toLocaleString() + '</td>' +
+        '<td class="bar-cell">' +
+          '<div class="bar" style="width:' + barW + '%"></div>' +
+          '<span class="bar-text">' + pct + '%</span>' +
+        '</td>' +
+      '</tr>';
     }
 
-    function generateCombinations(words, size){
-
-        const combos = [];
-
-        for(let i = 0; i <= words.length - size; i++){
-
-            const combo = words.slice(i, i + size).join(" ");
-
-            combos.push(combo);
-        }
-
-        return combos;
+    if(data.length > limit){
+      html += '<tr><td colspan="3" class="no-results">' +
+        'Showing top ' + limit.toLocaleString() + ' of ' +
+        data.length.toLocaleString() + ' results.' +
+      '</td></tr>';
     }
 
-    document.getElementById("findBtn").addEventListener("click", () => {
+    if(data.length === 0){
+      html = '<tr><td colspan="3" class="no-results">No results.</td></tr>';
+    }
 
-        const rawText = document.getElementById("textInput").value;
+    tbody.innerHTML = html;
+  }
 
-        const comboSize =
-            parseInt(document.getElementById("comboSize").value) || 1;
+  function escapeHtml(str){
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
 
-        if(!rawText.trim()){
-            alert("Please paste text first.");
-            return;
-        }
+  /* ---------- live filter ---------- */
 
-        const cleaned = normalizeText(rawText);
-
-        const words = tokenize(cleaned);
-
-        const units = generateCombinations(words, comboSize);
-
-        const frequency = {};
-
-        for(const unit of units){
-
-            frequency[unit] = (frequency[unit] || 0) + 1;
-        }
-
-        const totalUnits = units.length;
-
-        const sorted = Object.entries(frequency)
-            .sort((a,b) => b[1] - a[1]);
-
-        const tbody =
-            document.querySelector("#resultTable tbody");
-
-        tbody.innerHTML = "";
-
-        sorted.forEach(([word, count]) => {
-
-            const percentage =
-                ((count / totalUnits) * 100).toFixed(4);
-
-            const row = document.createElement("tr");
-
-            row.innerHTML = \`
-                <td>\${word}</td>
-                <td>\${count}</td>
-                <td>\${percentage}%</td>
-            \`;
-
-            tbody.appendChild(row);
-        });
-
+  filterIn.addEventListener("input", function(){
+    var q = this.value.toLocaleLowerCase().trim();
+    if(!q){
+      renderTable(allResults);
+      return;
+    }
+    var filtered = allResults.filter(function(d){
+      return d.word.indexOf(q) !== -1;
     });
+    renderTable(filtered);
+  });
 
-    </script>
+})();
+</script>
 
-    </body>
-    </html>
-    `);
+</body>
+</html>`);
 
+  newTab.document.close();
 });
