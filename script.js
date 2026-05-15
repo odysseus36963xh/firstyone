@@ -8,13 +8,9 @@ speechSynthesis.onvoiceschanged = () => {
   voices = speechSynthesis.getVoices();
 };
 
-// ===============================
-// VOICES INIT
-// ===============================
 function loadVoices() {
   voices = speechSynthesis.getVoices() || [];
 }
-
 voices = speechSynthesis.getVoices();
 speechSynthesis.onvoiceschanged = loadVoices;
 loadVoices();
@@ -30,8 +26,9 @@ function parseCell(ref) {
   if (!ref || ref.trim() === "") return null;
   const match = ref.match(/^([A-Z]+)(\d+)$/i);
   if (!match) return null;
+  // Returns 1-based row index to match UI (A1 = row 1)
   const col = colToIndex(match[1]);
-  const row = parseInt(match[2]) - 1;
+  const row = parseInt(match[2]);
   return { col, row };
 }
 
@@ -39,36 +36,24 @@ function parseCell(ref) {
 // VOICE SELECTION
 // ===============================
 function getVoice(langCode) {
-  const map = {
-    EN: "en",
-    IT: "it",
-    ES: "es",
-    FR: "fr",
-    DE: "de"
-  };
-
+  const map = { EN: "en", IT: "it", ES: "es", FR: "fr", DE: "de" };
   const lang = map[langCode];
   if (!lang) return null;
-
   return voices.find(v => v.lang?.toLowerCase().startsWith(lang));
 }
 
 // ===============================
-// SPEAK FUNCTION (SAFE)
+// SPEAK FUNCTION
 // ===============================
 function speak(text, lang, rate) {
   return new Promise(resolve => {
     if (!text || !text.trim()) return resolve();
-
     const utter = new SpeechSynthesisUtterance(text);
     const voice = getVoice(lang);
-
     if (voice) utter.voice = voice;
     utter.rate = rate || 1;
-
     utter.onend = resolve;
     utter.onerror = resolve;
-
     speechSynthesis.speak(utter);
   });
 }
@@ -77,8 +62,7 @@ function speak(text, lang, rate) {
 // UI HELPERS
 // ===============================
 function clearHighlight() {
-  document.querySelectorAll(".reading")
-    .forEach(c => c.classList.remove("reading"));
+  document.querySelectorAll(".reading").forEach(c => c.classList.remove("reading"));
 }
 
 function stopReading() {
@@ -112,31 +96,24 @@ async function startReading() {
 
   let rowRange = [];
   let colRange = [];
-
   for (let r = start.row; r <= end.row; r++) rowRange.push(r);
   for (let c = start.col; c <= end.col; c++) colRange.push(c);
 
-  if (reverse) {
-    rowRange.reverse();
-    colRange.reverse();
-  }
+  if (reverse) { rowRange.reverse(); colRange.reverse(); }
 
   for (let rt = 0; rt < repeatTable; rt++) {
     if (!isReading) return;
-
     for (let r of rowRange) {
       if (!isReading) return;
-
+      // table.rows[0] = header, table.rows[1] = selectors, table.rows[2+] = data
       const row = table.rows[r + 1];
       if (!row) continue;
 
       for (let rr = 0; rr < repeatRow; rr++) {
         for (let c of colRange) {
           if (!isReading) return;
-
-          const cell = row.cells[c + 1];
+          const cell = row.cells[c + 1]; // +1 skips row number header
           if (!cell) continue;
-
           const text = cell.innerText || "";
 
           const selector = table.rows[1]?.cells[c + 1]?.querySelector("select");
@@ -146,7 +123,6 @@ async function startReading() {
 
           for (let rc = 0; rc < repeatCell; rc++) {
             if (!isReading) return;
-
             cell.classList.add("reading");
             await speak(text, lang, speed);
             cell.classList.remove("reading");
@@ -155,64 +131,42 @@ async function startReading() {
       }
     }
   }
-
   isReading = false;
 }
 
 // ===============================
-// TIMESTAMP
+// EXPORT & SAVE
 // ===============================
 function getTimestamp() {
   const d = new Date();
   const pad = n => String(n).padStart(2, "0");
-
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
 }
 
-// ===============================
-// EXPORT TABLE
-// ===============================
 function exportTableData() {
   const table = document.getElementById("sheet");
   if (!table) return null;
-
   const data = [];
-
-  // language selector row is index 1
   const selectorRow = table.rows[1];
 
   for (let r = 2; r < table.rows.length; r++) {
     const row = table.rows[r];
     const rowData = [];
-
     for (let c = 1; c < row.cells.length; c++) {
       const cell = row.cells[c];
       const selector = selectorRow?.cells[c]?.querySelector("select");
-
       rowData.push({
         value: (cell?.innerText || "").trim(),
         lang: selector?.value || "Off"
       });
     }
-
     data.push(rowData);
   }
-
-  return {
-    createdAt: new Date().toISOString(),
-    columns: 26,
-    rows: data.length,
-    data
-  };
+  return { createdAt: new Date().toISOString(), columns: 26, rows: data.length, data };
 }
 
-// ===============================
-// DOWNLOAD JSON
-// ===============================
 function downloadJSON(filename, data) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], {
-    type: "application/json"
-  });
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -223,43 +177,21 @@ function downloadJSON(filename, data) {
   URL.revokeObjectURL(url);
 }
 
-// ===============================
-// SAVE DIALOG
-// ===============================
 function openSaveDialog(defaultName, onConfirm) {
   const overlay = document.createElement("div");
-  overlay.style.cssText = `
-    position:fixed; inset:0;
-    background:rgba(0,0,0,0.4);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    z-index:9999;
-  `;
-
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:9999;";
   const box = document.createElement("div");
-  box.style.cssText = `
-    background:#fff;
-    padding:20px;
-    border-radius:10px;
-    width:320px;
-    font-family:Arial;
-  `;
-
+  box.style.cssText = "background:#fff;padding:20px;border-radius:10px;width:320px;font-family:Arial;";
   box.innerHTML = `
     <h3 style="margin-top:0;">Save Table</h3>
     <input id="fileName" style="width:100%;padding:8px" value="${defaultName}">
     <div style="margin-top:12px;display:flex;justify-content:flex-end;gap:8px;">
       <button id="cancel">Cancel</button>
       <button id="save">Save</button>
-    </div>
-  `;
-
+    </div>`;
   overlay.appendChild(box);
   document.body.appendChild(overlay);
-
   overlay.querySelector("#cancel").onclick = () => overlay.remove();
-
   overlay.querySelector("#save").onclick = () => {
     const name = overlay.querySelector("#fileName").value.trim();
     overlay.remove();
@@ -267,20 +199,12 @@ function openSaveDialog(defaultName, onConfirm) {
   };
 }
 
-// ===============================
-// SAVE TABLE
-// ===============================
 function saveTable() {
   const filename = `language-table_${getTimestamp()}.json`;
   const data = exportTableData();
-
   if (!data) return;
-
   openSaveDialog(filename, (finalName) => {
-    downloadJSON(
-      finalName.endsWith(".json") ? finalName : finalName + ".json",
-      data
-    );
+    downloadJSON(finalName.endsWith(".json") ? finalName : finalName + ".json", data);
   });
 }
 
@@ -304,157 +228,62 @@ function toggleReader() {
 // ===============================
 document.getElementById("openFinder").addEventListener("click", () => {
   const newTab = window.open("", "_blank");
-
   newTab.document.write(`
     <!DOCTYPE html>
     <html lang="en">
     <head>
-      <meta charset="UTF-8">
-      <title>Frequency Finder</title>
+      <meta charset="UTF-8"><title>Frequency Finder</title>
       <style>
-        body {
-          font-family: Arial, sans-serif;
-          background: #101010;
-          color: white;
-          padding: 20px;
-        }
-        textarea {
-          width: 100%;
-          height: 300px;
-          padding: 15px;
-          font-size: 16px;
-          border-radius: 10px;
-          border: none;
-          resize: vertical;
-          margin-top: 10px;
-        }
-        input[type=number] {
-          padding: 10px;
-          width: 260px;
-          font-size: 16px;
-          border: none;
-          border-radius: 8px;
-          margin-top: 10px;
-        }
-        button {
-          background: #2b7cff;
-          color: white;
-          border: none;
-          padding: 12px 20px;
-          border-radius: 10px;
-          cursor: pointer;
-          font-size: 17px;
-          margin-top: 10px;
-        }
-        button:hover {
-          background: #1e63da;
-        }
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-top: 25px;
-          background: #1a1a1a;
-        }
-        th, td {
-          border: 1px solid #333;
-          padding: 12px;
-          text-align: left;
-        }
-        th {
-          background: #222;
-        }
-        tr:nth-child(even) {
-          background: #151515;
-        }
-        h1 {
-          color: #61a8ff;
-        }
-        .small {
-          color: #bbb;
-          margin-bottom: 15px;
-        }
+        body{font-family:Arial,sans-serif;background:#101010;color:white;padding:20px;}
+        textarea{width:100%;height:300px;padding:15px;font-size:16px;border-radius:10px;border:none;resize:vertical;margin-top:10px;}
+        input[type=number]{padding:10px;width:260px;font-size:16px;border:none;border-radius:8px;margin-top:10px;}
+        button{background:#2b7cff;color:white;border:none;padding:12px 20px;border-radius:10px;cursor:pointer;font-size:17px;margin-top:10px;}
+        button:hover{background:#1e63da;}
+        table{width:100%;border-collapse:collapse;margin-top:25px;background:#1a1a1a;}
+        th,td{border:1px solid #333;padding:12px;text-align:left;}
+        th{background:#222;}
+        tr:nth-child(even){background:#151515;}
+        h1{color:#61a8ff;}
+        .small{color:#bbb;margin-bottom:15px;}
       </style>
     </head>
     <body>
       <h1>Frequency Finder</h1>
-      <div class="small">
-        Works with English, Arabic, Chinese, Hindi, Russian, Georgian, and most world alphabets.
-      </div>
-      <textarea id="textInput" placeholder="Paste large or small text here..."></textarea>
-      <br>
-      <input id="comboSize" type="number" min="1" max="10" value="1" placeholder="Words per combo">
-      <br>
+      <div class="small">Works with English, Arabic, Chinese, Hindi, Russian, Georgian, and most world alphabets.</div>
+      <textarea id="textInput" placeholder="Paste large or small text here..."></textarea><br>
+      <input id="comboSize" type="number" min="1" max="10" value="1" placeholder="Words per combo"><br>
       <button id="findBtn">Find Frequency</button>
       <table id="resultTable">
-        <thead>
-          <tr>
-            <th>Word / Combination</th>
-            <th>Total Appearances</th>
-            <th>Percentage of Text</th>
-          </tr>
-        </thead>
+        <thead><tr><th>Word / Combination</th><th>Total Appearances</th><th>Percentage of Text</th></tr></thead>
         <tbody></tbody>
       </table>
-
       <script>
-        function normalizeText(text) {
-          text = text.normalize("NFKC");
-          text = text.replace(/\\p{N}/gu, " ");
-          text = text.toLocaleLowerCase();
-          text = text.replace(/\\p{P}\\p{S}/gu, " ");
-          text = text.replace(/\\s+/g, " ").trim();
-          return text;
-        }
-
-        function tokenize(text) {
-          const words = text.match(/\\p{L}+/gu);
-          return words || [];
-        }
-
-        function generateCombinations(words, size) {
-          const combos = [];
-          for (let i = 0; i <= words.length - size; i++) {
-            const combo = words.slice(i, i + size).join(" ");
-            combos.push(combo);
-          }
-          return combos;
-        }
-
-        document.getElementById("findBtn").addEventListener("click", () => {
-          const rawText = document.getElementById("textInput").value;
-          const comboSize = parseInt(document.getElementById("comboSize").value) || 1;
-
-          if (!rawText.trim()) {
-            alert("Please paste text first.");
-            return;
-          }
-
-          const cleaned = normalizeText(rawText);
-          const words = tokenize(cleaned);
-          const units = generateCombinations(words, comboSize);
-
-          const frequency = {};
-          for (const unit of units) {
-            frequency[unit] = (frequency[unit] || 0) + 1;
-          }
-
-          const totalUnits = units.length;
-          const sorted = Object.entries(frequency).sort((a, b) => b[1] - a[1]);
-
-          const tbody = document.querySelector("#resultTable tbody");
-          tbody.innerHTML = "";
-
-          sorted.forEach(([word, count]) => {
-            const percentage = ((count / totalUnits) * 100).toFixed(4);
-            const row = document.createElement("tr");
-            row.innerHTML = '<td>' + word + '</td><td>' + count + '</td><td>' + percentage + '%</td>';
-            tbody.appendChild(row);
+        function normalizeText(t){t=t.normalize("NFKC");t=t.replace(/\\p{N}/gu," ");t=t.toLocaleLowerCase();t=t.replace(/\\p{P}\\p{S}/gu," ");t=t.replace(/\\s+/g," ").trim();return t;}
+        function tokenize(t){return t.match(/\\p{L}+/gu)||[];}
+        function generateCombinations(w,s){const c=[];for(let i=0;i<=w.length-s;i++)c.push(w.slice(i,i+s).join(" "));return c;}
+        document.getElementById("findBtn").addEventListener("click",()=>{
+          const raw=document.getElementById("textInput").value;
+          const size=parseInt(document.getElementById("comboSize").value)||1;
+          if(!raw.trim()){alert("Please paste text first.");return;}
+          const cleaned=normalizeText(raw);
+          const words=tokenize(cleaned);
+          const units=generateCombinations(words,size);
+          const freq={};
+          for(const u of units)freq[u]=(freq[u]||0)+1;
+          const total=units.length;
+          const sorted=Object.entries(freq).sort((a,b)=>b[1]-a[1]);
+          const tbody=document.querySelector("#resultTable tbody");
+          tbody.innerHTML="";
+          sorted.forEach(([w,c])=>{
+            const p=((c/total)*100).toFixed(4);
+            const tr=document.createElement("tr");
+            tr.innerHTML='<td>'+w+'</td><td>'+c+'</td><td>'+p+'%</td>';
+            tbody.appendChild(tr);
           });
         });
       <\\/script>
     </body>
     </html>
   `);
-
   newTab.document.close();
 });
