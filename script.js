@@ -228,14 +228,66 @@ function toggleReader() {
 // ===============================
 // FREQUENCY FINDER (UNIVERSAL LANGUAGE SUPPORT)
 // ===============================
+// ===============================
+// FREQUENCY FINDER (BULLETPROOF)
+// ===============================
 document.getElementById("openFinder").addEventListener("click", () => {
   const newTab = window.open("", "_blank");
   if (!newTab) return; // Popup blocked
 
-  newTab.document.write(`<!DOCTYPE html>
+  const innerJS = `
+    document.addEventListener("DOMContentLoaded", function() {
+      document.getElementById("findBtn").addEventListener("click", function() {
+        var raw = document.getElementById("textInput").value;
+        var size = parseInt(document.getElementById("comboSize").value) || 1;
+        if (!raw.trim()) { alert("Please paste text first."); return; }
+        
+        try {
+          var text = raw.normalize("NFKC");
+          // Remove numbers, punctuation & symbols. Keep letters + spaces
+          text = text.replace(/[\\p{N}\\p{P}\\p{S}]/gu, " ");
+          text = text.toLowerCase().replace(/\\s+/g, " ").trim();
+          
+          // Extract all letter sequences (works for ALL Unicode scripts)
+          var tokens = text.match(/[\\p{L}]+/gu) || [];
+          if (tokens.length === 0) { alert("No valid words/characters found."); return; }
+
+          // Generate sliding window combinations
+          var combos = [];
+          for (var i = 0; i <= tokens.length - size; i++) {
+            combos.push(tokens.slice(i, i + size).join(" "));
+          }
+
+          // Count frequency
+          var freq = {};
+          combos.forEach(function(c) { freq[c] = (freq[c] || 0) + 1; });
+          
+          // Sort descending
+          var sorted = Object.entries(freq).sort(function(a, b) { return b[1] - a[1]; });
+
+          // Render table
+          var tbody = document.querySelector("#resultTable tbody");
+          tbody.innerHTML = "";
+          sorted.forEach(function(item) {
+            var w = item[0];
+            var c = item[1];
+            var pct = ((c / combos.length) * 100).toFixed(4);
+            var tr = document.createElement("tr");
+            tr.innerHTML = '<td>' + w + '</td><td>' + c + '</td><td>' + pct + '%</td>';
+            tbody.appendChild(tr);
+          });
+        } catch(e) {
+          alert("Processing error: " + e.message);
+        }
+      });
+    });
+  `;
+
+  const html = `<!DOCTYPE html>
     <html lang="en">
     <head>
-      <meta charset="UTF-8"><title>Frequency Finder</title>
+      <meta charset="UTF-8">
+      <title>Frequency Finder</title>
       <style>
         body{font-family:Arial,sans-serif;background:#101010;color:white;padding:20px;}
         textarea{width:100%;height:300px;padding:15px;font-size:16px;border-radius:10px;border:none;resize:vertical;margin-top:10px;background:#222;color:white;}
@@ -252,7 +304,7 @@ document.getElementById("openFinder").addEventListener("click", () => {
     </head>
     <body>
       <h1>Frequency Finder</h1>
-      <div class="small">Works with English, Arabic, Chinese, Korean, Hindi, Russian, Georgian, and all Unicode scripts.</div>
+      <div class="small">Universal: English, Arabic, Chinese, Korean, Hindi, Russian, Georgian, etc.</div>
       <textarea id="textInput" placeholder="Paste text here..."></textarea><br>
       <input id="comboSize" type="number" min="1" max="10" value="1" placeholder="Words/Chars per combo"><br>
       <button id="findBtn">Find Frequency</button>
@@ -260,53 +312,10 @@ document.getElementById("openFinder").addEventListener("click", () => {
         <thead><tr><th>Word / Combination</th><th>Total Appearances</th><th>Percentage</th></tr></thead>
         <tbody></tbody>
       </table>
-      <script>
-        document.addEventListener("DOMContentLoaded", () => {
-          document.getElementById("findBtn").addEventListener("click", () => {
-            const raw = document.getElementById("textInput").value;
-            const size = parseInt(document.getElementById("comboSize").value) || 1;
-            if (!raw.trim()) { alert("Please paste text first."); return; }
-            try {
-              // 1. Normalize & keep ONLY letters + whitespace
-              let text = raw.normalize("NFKC");
-              text = text.replace(/[^\p{L}\s]/gu, " ");
-              
-              // 2. Case-insensitive (safe for all scripts)
-              text = text.toLowerCase();
-              
-              // 3. Collapse whitespace & extract tokens
-              text = text.replace(/\s+/g, " ").trim();
-              const tokens = text.match(/\p{L}+/gu) || [];
-              
-              if (tokens.length === 0) { alert("No valid words/characters found."); return; }
-
-              // 4. Generate combinations (sliding window)
-              const combos = [];
-              for (let i = 0; i <= tokens.length - size; i++) {
-                combos.push(tokens.slice(i, i + size).join(" "));
-              }
-
-              // 5. Count & sort descending
-              const freq = {};
-              for (const c of combos) freq[c] = (freq[c] || 0) + 1;
-              const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]);
-
-              // 6. Render table
-              const tbody = document.querySelector("#resultTable tbody");
-              tbody.innerHTML = "";
-              sorted.forEach(([word, count]) => {
-                const pct = ((count / combos.length) * 100).toFixed(4);
-                const tr = document.createElement("tr");
-                tr.innerHTML = '<td>' + word + '</td><td>' + count + '</td><td>' + pct + '%</td>';
-                tbody.appendChild(tr);
-              });
-            } catch (err) {
-              alert("Processing error: " + err.message);
-            }
-          });
-        });
-      <\/script>
+      <script>${innerJS}<\\/script>
     </body>
-  </html>`);
+    </html>`;
+
+  newTab.document.write(html);
   newTab.document.close();
 });
