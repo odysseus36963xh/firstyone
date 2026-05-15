@@ -221,22 +221,25 @@ function toggleReader() {
   const bar = document.getElementById("toolbar");
   if (!bar) return;
   bar.style.display = bar.style.display === "flex" ? "none" : "flex";
-}
+} 
+
+
 
 // ===============================
-// FREQUENCY FINDER
+// FREQUENCY FINDER (UNIVERSAL LANGUAGE SUPPORT)
 // ===============================
 document.getElementById("openFinder").addEventListener("click", () => {
   const newTab = window.open("", "_blank");
-  newTab.document.write(`
-    <!DOCTYPE html>
+  if (!newTab) return; // Popup blocked
+
+  newTab.document.write(`<!DOCTYPE html>
     <html lang="en">
     <head>
       <meta charset="UTF-8"><title>Frequency Finder</title>
       <style>
         body{font-family:Arial,sans-serif;background:#101010;color:white;padding:20px;}
-        textarea{width:100%;height:300px;padding:15px;font-size:16px;border-radius:10px;border:none;resize:vertical;margin-top:10px;}
-        input[type=number]{padding:10px;width:260px;font-size:16px;border:none;border-radius:8px;margin-top:10px;}
+        textarea{width:100%;height:300px;padding:15px;font-size:16px;border-radius:10px;border:none;resize:vertical;margin-top:10px;background:#222;color:white;}
+        input[type=number]{padding:10px;width:260px;font-size:16px;border:none;border-radius:8px;margin-top:10px;background:#333;color:white;}
         button{background:#2b7cff;color:white;border:none;padding:12px 20px;border-radius:10px;cursor:pointer;font-size:17px;margin-top:10px;}
         button:hover{background:#1e63da;}
         table{width:100%;border-collapse:collapse;margin-top:25px;background:#1a1a1a;}
@@ -249,41 +252,61 @@ document.getElementById("openFinder").addEventListener("click", () => {
     </head>
     <body>
       <h1>Frequency Finder</h1>
-      <div class="small">Works with English, Arabic, Chinese, Hindi, Russian, Georgian, and most world alphabets.</div>
-      <textarea id="textInput" placeholder="Paste large or small text here..."></textarea><br>
-      <input id="comboSize" type="number" min="1" max="10" value="1" placeholder="Words per combo"><br>
+      <div class="small">Works with English, Arabic, Chinese, Korean, Hindi, Russian, Georgian, and all Unicode scripts.</div>
+      <textarea id="textInput" placeholder="Paste text here..."></textarea><br>
+      <input id="comboSize" type="number" min="1" max="10" value="1" placeholder="Words/Chars per combo"><br>
       <button id="findBtn">Find Frequency</button>
       <table id="resultTable">
-        <thead><tr><th>Word / Combination</th><th>Total Appearances</th><th>Percentage of Text</th></tr></thead>
+        <thead><tr><th>Word / Combination</th><th>Total Appearances</th><th>Percentage</th></tr></thead>
         <tbody></tbody>
       </table>
       <script>
-        function normalizeText(t){t=t.normalize("NFKC");t=t.replace(/\\p{N}/gu," ");t=t.toLocaleLowerCase();t=t.replace(/\\p{P}\\p{S}/gu," ");t=t.replace(/\\s+/g," ").trim();return t;}
-        function tokenize(t){return t.match(/\\p{L}+/gu)||[];}
-        function generateCombinations(w,s){const c=[];for(let i=0;i<=w.length-s;i++)c.push(w.slice(i,i+s).join(" "));return c;}
-        document.getElementById("findBtn").addEventListener("click",()=>{
-          const raw=document.getElementById("textInput").value;
-          const size=parseInt(document.getElementById("comboSize").value)||1;
-          if(!raw.trim()){alert("Please paste text first.");return;}
-          const cleaned=normalizeText(raw);
-          const words=tokenize(cleaned);
-          const units=generateCombinations(words,size);
-          const freq={};
-          for(const u of units)freq[u]=(freq[u]||0)+1;
-          const total=units.length;
-          const sorted=Object.entries(freq).sort((a,b)=>b[1]-a[1]);
-          const tbody=document.querySelector("#resultTable tbody");
-          tbody.innerHTML="";
-          sorted.forEach(([w,c])=>{
-            const p=((c/total)*100).toFixed(4);
-            const tr=document.createElement("tr");
-            tr.innerHTML='<td>'+w+'</td><td>'+c+'</td><td>'+p+'%</td>';
-            tbody.appendChild(tr);
+        document.addEventListener("DOMContentLoaded", () => {
+          document.getElementById("findBtn").addEventListener("click", () => {
+            const raw = document.getElementById("textInput").value;
+            const size = parseInt(document.getElementById("comboSize").value) || 1;
+            if (!raw.trim()) { alert("Please paste text first."); return; }
+            try {
+              // 1. Normalize & keep ONLY letters + whitespace
+              let text = raw.normalize("NFKC");
+              text = text.replace(/[^\p{L}\s]/gu, " ");
+              
+              // 2. Case-insensitive (safe for all scripts)
+              text = text.toLowerCase();
+              
+              // 3. Collapse whitespace & extract tokens
+              text = text.replace(/\s+/g, " ").trim();
+              const tokens = text.match(/\p{L}+/gu) || [];
+              
+              if (tokens.length === 0) { alert("No valid words/characters found."); return; }
+
+              // 4. Generate combinations (sliding window)
+              const combos = [];
+              for (let i = 0; i <= tokens.length - size; i++) {
+                combos.push(tokens.slice(i, i + size).join(" "));
+              }
+
+              // 5. Count & sort descending
+              const freq = {};
+              for (const c of combos) freq[c] = (freq[c] || 0) + 1;
+              const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]);
+
+              // 6. Render table
+              const tbody = document.querySelector("#resultTable tbody");
+              tbody.innerHTML = "";
+              sorted.forEach(([word, count]) => {
+                const pct = ((count / combos.length) * 100).toFixed(4);
+                const tr = document.createElement("tr");
+                tr.innerHTML = '<td>' + word + '</td><td>' + count + '</td><td>' + pct + '%</td>';
+                tbody.appendChild(tr);
+              });
+            } catch (err) {
+              alert("Processing error: " + err.message);
+            }
           });
         });
-      <\\/script>
+      <\/script>
     </body>
-    </html>
-  `);
+  </html>`);
   newTab.document.close();
 });
