@@ -1,19 +1,4 @@
-// ===============================
-// GLOBAL STATE
-// ===============================
-let isReading = false;
-let voices = [];
-
-// ===============================
-// VOICES INIT (FIXED)
-// ===============================
-function loadVoices() {
-  voices = speechSynthesis.getVoices() || [];
-}
-
-speechSynthesis.onvoiceschanged = loadVoices;
-loadVoices();
-// ===============================
+/ ===============================
 // GLOBAL STATE
 // ===============================
 let isReading = false;
@@ -326,85 +311,82 @@ document.getElementById("openFinder").addEventListener("click", () => {
     newTab.document.write(`
     <!DOCTYPE html>
     <html lang="en">
-
     <head>
     <meta charset="UTF-8">
     <title>Frequency Finder</title>
 
     <style>
+        body{
+            font-family:Arial,sans-serif;
+            background:#101010;
+            color:white;
+            padding:20px;
+        }
 
-    body{
-        font-family:Arial,sans-serif;
-        background:#101010;
-        color:white;
-        padding:20px;
-    }
+        textarea{
+            width:100%;
+            height:300px;
+            padding:15px;
+            font-size:16px;
+            border-radius:10px;
+            border:none;
+            resize:vertical;
+            margin-top:10px;
+        }
 
-    textarea{
-        width:100%;
-        height:300px;
-        padding:15px;
-        font-size:16px;
-        border-radius:10px;
-        border:none;
-        resize:vertical;
-        margin-top:10px;
-    }
+        input{
+            padding:10px;
+            width:260px;
+            font-size:16px;
+            border:none;
+            border-radius:8px;
+            margin-top:10px;
+        }
 
-    input{
-        padding:10px;
-        width:260px;
-        font-size:16px;
-        border:none;
-        border-radius:8px;
-        margin-top:10px;
-    }
+        button{
+            background:#2b7cff;
+            color:white;
+            border:none;
+            padding:12px 20px;
+            border-radius:10px;
+            cursor:pointer;
+            font-size:17px;
+            margin-top:10px;
+        }
 
-    button{
-        background:#2b7cff;
-        color:white;
-        border:none;
-        padding:12px 20px;
-        border-radius:10px;
-        cursor:pointer;
-        font-size:17px;
-        margin-top:10px;
-    }
+        button:hover{
+            background:#1e63da;
+        }
 
-    button:hover{
-        background:#1e63da;
-    }
+        table{
+            width:100%;
+            border-collapse:collapse;
+            margin-top:25px;
+            background:#1a1a1a;
+        }
 
-    table{
-        width:100%;
-        border-collapse:collapse;
-        margin-top:25px;
-        background:#1a1a1a;
-    }
+        th, td{
+            border:1px solid #333;
+            padding:12px;
+            text-align:left;
+        }
 
-    th, td{
-        border:1px solid #333;
-        padding:12px;
-        text-align:left;
-    }
+        th{
+            background:#222;
+        }
 
-    th{
-        background:#222;
-    }
+        tr:nth-child(even){
+            background:#151515;
+        }
 
-    tr:nth-child(even){
-        background:#151515;
-    }
+        h1{
+            color:#61a8ff;
+        }
 
-    h1{
-        color:#61a8ff;
-    }
-
-    .small{
-        color:#bbb;
-        margin-bottom:15px;
-    }
-
+        .small{
+            color:#bbb;
+            margin-bottom:15px;
+        }
     </style>
 
     </head>
@@ -414,70 +396,7 @@ document.getElementById("openFinder").addEventListener("click", () => {
     <h1>Frequency Finder</h1>
 
     <div class="small">
-    Works with English, Arabic, Chinese, Hindi, Russian, Georgian, and most world alphabets.
-    </div>
-
-    <div style="margin-top:20px;">
-
-        <button id="toggleLanguages"
-        style="
-        background:#28a745;
-        color:white;
-        border:none;
-        padding:10px 18px;
-        border-radius:8px;
-        cursor:pointer;
-        font-size:16px;
-        ">
-        Show Compatible Languages
-        </button>
-
-        <div id="languageBox"
-        style="
-        display:none;
-        margin-top:15px;
-        max-height:350px;
-        overflow-y:auto;
-        border:1px solid #333;
-        border-radius:10px;
-        ">
-
-            <table style="
-            width:100%;
-            border-collapse:collapse;
-            background:#181818;
-            color:white;
-            ">
-
-            <thead>
-                <tr>
-                    <th>Language</th>
-                    <th>Script</th>
-                    <th>Example</th>
-                </tr>
-            </thead>
-
-            <tbody>
-
-                <tr><td>English</td><td>Latin</td><td>Hello world</td></tr>
-                <tr><td>Spanish</td><td>Latin</td><td>Hola mundo</td></tr>
-                <tr><td>French</td><td>Latin</td><td>Bonjour monde</td></tr>
-                <tr><td>German</td><td>Latin</td><td>Hallo Welt</td></tr>
-                <tr><td>Italian</td><td>Latin</td><td>Ciao mondo</td></tr>
-                <tr><td>Russian</td><td>Cyrillic</td><td>Привет мир</td></tr>
-                <tr><td>Arabic</td><td>Arabic</td><td>مرحبا بالعالم</td></tr>
-                <tr><td>Hindi</td><td>Devanagari</td><td>नमस्ते दुनिया</td></tr>
-                <tr><td>Chinese</td><td>Han</td><td>你好世界</td></tr>
-                <tr><td>Japanese</td><td>Kana/Kanji</td><td>こんにちは世界</td></tr>
-                <tr><td>Korean</td><td>Hangul</td><td>안녕하세요</td></tr>
-                <tr><td>Georgian</td><td>Georgian</td><td>გამარჯობა</td></tr>
-
-            </tbody>
-
-            </table>
-
-        </div>
-
+        Works with English, Arabic, Chinese, Hindi, Russian, Georgian, and most world alphabets.
     </div>
 
     <textarea id="textInput"
@@ -485,12 +404,7 @@ document.getElementById("openFinder").addEventListener("click", () => {
 
     <br>
 
-    <input
-    id="comboSize"
-    type="number"
-    min="1"
-    max="10"
-    value="1"
+    <input id="comboSize" type="number" min="1" max="10" value="1"
     placeholder="Words per combo">
 
     <br>
@@ -498,7 +412,6 @@ document.getElementById("openFinder").addEventListener("click", () => {
     <button id="findBtn">Find Frequency</button>
 
     <table id="resultTable">
-
         <thead>
             <tr>
                 <th>Word / Combination</th>
@@ -506,31 +419,35 @@ document.getElementById("openFinder").addEventListener("click", () => {
                 <th>Percentage of Text</th>
             </tr>
         </thead>
-
         <tbody></tbody>
-
     </table>
 
     <script>
 
     function normalizeText(text){
 
+        // Unicode normalize
         text = text.normalize("NFKC");
 
-        text = text.replace(/[\\\\p{N}]/gu, " ");
+        // Remove digits from every language
+        text = text.replace(/[\\p{N}]/gu, " ");
 
+        // Lowercase safely
         text = text.toLocaleLowerCase();
 
-        text = text.replace(/[\\\\p{P}\\\\p{S}]/gu, " ");
+        // Remove punctuation/symbols but preserve letters from all languages
+        text = text.replace(/[\\p{P}\\p{S}]/gu, " ");
 
-        text = text.replace(/\\\\s+/g, " ").trim();
+        // Collapse spaces
+        text = text.replace(/\\s+/g, " ").trim();
 
         return text;
     }
 
     function tokenize(text){
 
-        const words = text.match(/[\\\\p{L}]+/gu);
+        // Match all Unicode letters
+        const words = text.match(/[\\p{L}]+/gu);
 
         return words || [];
     }
@@ -549,17 +466,14 @@ document.getElementById("openFinder").addEventListener("click", () => {
         return combos;
     }
 
-    document.getElementById("findBtn")
-    .addEventListener("click", () => {
+    document.getElementById("findBtn").addEventListener("click", () => {
 
-        const rawText =
-        document.getElementById("textInput").value;
+        const rawText = document.getElementById("textInput").value;
 
         const comboSize =
-        parseInt(document.getElementById("comboSize").value) || 1;
+            parseInt(document.getElementById("comboSize").value) || 1;
 
         if(!rawText.trim()){
-
             alert("Please paste text first.");
             return;
         }
@@ -579,19 +493,18 @@ document.getElementById("openFinder").addEventListener("click", () => {
 
         const totalUnits = units.length;
 
-        const sorted =
-        Object.entries(frequency)
-        .sort((a,b) => b[1] - a[1]);
+        const sorted = Object.entries(frequency)
+            .sort((a,b) => b[1] - a[1]);
 
         const tbody =
-        document.querySelector("#resultTable tbody");
+            document.querySelector("#resultTable tbody");
 
         tbody.innerHTML = "";
 
         sorted.forEach(([word, count]) => {
 
             const percentage =
-            ((count / totalUnits) * 100).toFixed(4);
+                ((count / totalUnits) * 100).toFixed(4);
 
             const row = document.createElement("tr");
 
@@ -602,25 +515,7 @@ document.getElementById("openFinder").addEventListener("click", () => {
             \`;
 
             tbody.appendChild(row);
-
         });
-
-    });
-
-    document.getElementById("toggleLanguages")
-    .addEventListener("click", () => {
-
-        const box =
-        document.getElementById("languageBox");
-
-        if(box.style.display === "none"){
-
-            box.style.display = "block";
-
-        } else {
-
-            box.style.display = "none";
-        }
 
     });
 
@@ -629,7 +524,5 @@ document.getElementById("openFinder").addEventListener("click", () => {
     </body>
     </html>
     `);
-
-    newTab.document.close();
 
 });
