@@ -212,6 +212,61 @@ function saveTable() {
 
 
 
+function uploadTable() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+
+  input.onchange = function () {
+    const file = input.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        const data = JSON.parse(e.target.result);
+
+        if (data.cells) {
+          for (let r = 0; r < 26; r++)
+            for (let c = 0; c < 26; c++)
+              if (data.cells[r] && data.cells[r][c] != null)
+                cells[r][c].textContent = data.cells[r][c];
+        }
+
+        if (data.langs) {
+          for (let c = 0; c < 26; c++)
+            if (data.langs[c]) colSelects[c].value = data.langs[c];
+        }
+
+        flash('Table uploaded ✓');
+      } catch (err) {
+        alert('Invalid JSON file');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  input.click();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ===============================
 // UI TOGGLES
