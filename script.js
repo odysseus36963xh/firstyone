@@ -134,8 +134,15 @@ async function startReading() {
   isReading = false;
 }
 
+
+
+
+
+
+
+
 // ===============================
-// EXPORT & SAVE
+// EXPORT & SAVE (harmonised)
 // ===============================
 function getTimestamp() {
   const d = new Date();
@@ -146,23 +153,38 @@ function getTimestamp() {
 function exportTableData() {
   const table = document.getElementById("sheet");
   if (!table) return null;
-  const data = [];
-  const selectorRow = table.rows[1];
 
+  const dataRows = table.rows.length - 2;
+  const colCount = 26;
+
+  const cells = [];           // 2D array of plain strings
+  const languages = [];       // column language values
+
+  // Column languages from the selector row (row 1)
+  const selectorRow = table.rows[1];
+  for (let c = 0; c < colCount; c++) {
+    const cell = selectorRow?.cells[c + 1];
+    const select = cell?.querySelector("select");
+    languages.push(select?.value || "Off");
+  }
+
+  // Data rows (starting at index 2)
   for (let r = 2; r < table.rows.length; r++) {
     const row = table.rows[r];
     const rowData = [];
-    for (let c = 1; c < row.cells.length; c++) {
-      const cell = row.cells[c];
-      const selector = selectorRow?.cells[c]?.querySelector("select");
-      rowData.push({
-        value: (cell?.innerText || "").trim(),
-        lang: selector?.value || "Off"
-      });
+    for (let c = 1; c <= colCount; c++) {
+      rowData.push(row.cells[c]?.innerText?.trim() || "");
     }
-    data.push(rowData);
+    cells.push(rowData);
   }
-  return { createdAt: new Date().toISOString(), columns: 26, rows: data.length, data };
+
+  return {
+    createdAt: new Date().toISOString(),
+    columns: colCount,
+    rows: dataRows,
+    cells,
+    languages
+  };
 }
 
 function downloadJSON(filename, data) {
@@ -208,14 +230,13 @@ function saveTable() {
   });
 }
 
-
-
-
-
+// ===============================
+// UPLOAD TABLE (harmonised)
+// ===============================
 function uploadTable() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".json";
 
   input.onchange = function () {
     const file = input.files[0];
@@ -226,21 +247,48 @@ function uploadTable() {
       try {
         const data = JSON.parse(e.target.result);
 
-        if (data.cells) {
-          for (let r = 0; r < 26; r++)
-            for (let c = 0; c < 26; c++)
-              if (data.cells[r] && data.cells[r][c] != null)
-                cells[r][c].textContent = data.cells[r][c];
+        if (!data.cells || !data.languages) {
+          throw new Error("Missing 'cells' or 'languages'");
         }
 
-        if (data.langs) {
-          for (let c = 0; c < 26; c++)
-            if (data.langs[c]) colSelects[c].value = data.langs[c];
+        const table = document.getElementById("sheet");
+        if (!table) throw new Error("Table not found");
+
+        // Remove all existing data rows (keep header + selector row)
+        while (table.rows.length > 2) {
+          table.deleteRow(2);
         }
 
-        flash('Table uploaded ✓');
+        // Restore column language selectors
+        const selectorRow = table.rows[1];
+        for (let c = 0; c < data.languages.length; c++) {
+          const cell = selectorRow.cells[c + 1];
+          const select = cell?.querySelector("select");
+          if (select) select.value = data.languages[c];
+        }
+
+        // Rebuild data rows
+        data.cells.forEach((rowArray) => {
+          const newRow = table.insertRow();
+          const numberCell = newRow.insertCell();
+          numberCell.textContent = newRow.rowIndex - 1;
+          numberCell.className = "row-number";
+
+          rowArray.forEach((text) => {
+            const td = newRow.insertCell();
+            td.textContent = text || "";
+          });
+        });
+
+        // Success notification
+        if (typeof flash === "function") {
+          flash("Table uploaded ✓");
+        } else {
+          alert("Table uploaded successfully.");
+        }
+
       } catch (err) {
-        alert('Invalid JSON file');
+        alert("Invalid JSON file: " + (err.message || ""));
       }
     };
     reader.readAsText(file);
