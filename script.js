@@ -348,6 +348,7 @@ function toggleReader() {
 // ===============================
 // Upload
 // ===============================
+
 window.uploadColumn = function () {
   console.log("🚀 UPLOAD CLICKED!");
 
@@ -360,13 +361,13 @@ window.uploadColumn = function () {
   const startCellInput = document.getElementById("startCellUpload").value.trim().toUpperCase();
   const direction = document.getElementById("uploadDirection").value;
 
-  let startCol = 0;   // default = Column A
-  let startRow = 0;   // default = Row 1
+  let startCol = 0;   // Default = Column A
+  let startRow = 0;   // Default = Row 1
 
   if (startCellInput) {
     const match = startCellInput.match(/^([A-Z]+)(\d+)$/);
     if (!match) {
-      alert("Invalid start cell. Use format like A1, B5, or C12");
+      alert("Invalid cell format. Please use something like A1, B5, or C12");
       return;
     }
     startCol = match[1].charCodeAt(0) - 65;
@@ -376,7 +377,7 @@ window.uploadColumn = function () {
   const lines = rawText.split(/\r?\n/).map(x => x.trim()).filter(x => x !== "");
 
   // Auto-expand table if needed
-  let neededRows = direction === "down" 
+  const neededRows = direction === "down" 
     ? startRow + lines.length 
     : startRow + 1;
 
@@ -398,20 +399,17 @@ window.uploadColumn = function () {
 
     const row = sheetTable.rows[rowIndex + 2];
     if (!row) continue;
-
     const cell = row.cells[colIndex + 1];
     if (!cell) continue;
 
     cell.innerText = lines[i];
   }
 
-  alert(`✅ Uploaded ${lines.length} cell${lines.length === 1 ? '' : 's'}!`);
-  
-  // Optional: clear the box after upload
+  alert(`✅ Successfully uploaded ${lines.length} item${lines.length === 1 ? '' : 's'}!`);
+
+  // Optional: clear the input after successful upload
   // document.getElementById("columnData").value = "";
 };
-
-
 
 
 
