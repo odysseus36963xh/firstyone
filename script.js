@@ -330,55 +330,91 @@ function toggleReader() {
 
 
 function uploadColumn() {
+
   console.log("🚀 UPLOAD CLICKED!");
-  
-  const data = document.getElementById("columnData").value.trim();
+
+  const rawData = document.getElementById("columnData").value;
   const colIndex = parseInt(document.getElementById("columnSelect").value);
-  
-  console.log("📊 Data:", data);
-  console.log("🔢 Column:", colIndex);
-  
-  if (!data) {
+
+  if (!rawData.trim()) {
     alert("❌ Please paste some data first!");
     return;
   }
-  
+
   const table = document.getElementById("sheet");
+
   if (!table) {
     alert("❌ Table not found!");
     return;
   }
-  
-  console.log("✅ Table found:", table);
-  
-  const lines = data.split("\n");
+
+  // CLEAN + SPLIT LINES
+  const lines = rawData
+    .split(/\r?\n/)
+    .map(line => line.trim());
+
+  console.log("📦 Total lines:", lines.length);
+
+  // CURRENT DATA ROWS
+  // subtract 2 because:
+  // row 0 = letters
+  // row 1 = language selectors
+  const currentRows = table.rows.length - 2;
+
+  console.log("📏 Current rows:", currentRows);
+
+  // AUTO EXPAND TABLE
+  if (lines.length > currentRows) {
+
+    const rowsNeeded = lines.length - currentRows;
+
+    console.log("➕ Adding rows:", rowsNeeded);
+
+    addNewRows(rowsNeeded);
+  }
+
   let updated = 0;
-  
+
+  // REFRESH ROWS AFTER EXPANSION
+  const allRows = table.rows;
+
+  // START FROM DATA ROW INDEX 2
   for (let i = 0; i < lines.length; i++) {
-    const rowIndex = i + 1;
-   
-    
-    const row = table.rows[rowIndex + 1];
+
+    const row = allRows[i + 2];
+
     if (!row) {
-      console.log("⚠️ Row not found:", rowIndex + 1);
+      console.log("❌ Missing row:", i + 2);
       continue;
     }
-    
+
     const cell = row.cells[colIndex + 1];
-    if (cell) {
-      cell.innerText = lines[i].trim();
-      updated++;
-      console.log("✅ Updated cell:", String.fromCharCode(65 + colIndex) + rowIndex);
-    } else {
-      console.log("❌ Cell not found: col", colIndex, "row", rowIndex);
+
+    if (!cell) {
+      console.log("❌ Missing cell:", i);
+      continue;
     }
+
+    cell.innerText = lines[i];
+
+    updated++;
+
+    console.log(
+      "✅ Updated:",
+      String.fromCharCode(65 + colIndex) + (i + 1)
+    );
   }
-  
-  alert(`✅ Uploaded ${updated} cell(s) to column ${String.fromCharCode(65 + colIndex)}`);
+
+  alert(
+    `✅ Uploaded ${updated} rows into column ${String.fromCharCode(65 + colIndex)}`
+  );
+
+  // OPTIONAL CLEANUP
   document.getElementById("columnData").value = "";
+
+  // OPTIONAL HIDE
+  // document.getElementById("uploadBox").style.display = "none";
 }
-
-
 
 
 
