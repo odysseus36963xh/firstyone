@@ -309,39 +309,6 @@ function uploadTable() {
 
 
 
-// ===============================
-// UPLOAD COLUMN (paste into column)
-// ===============================
-function uploadColumn() {
-  const raw = document.getElementById("columnData")?.value;
-  if (!raw || !raw.trim()) {
-    alert("Please paste some column data first.");
-    return;
-  }
-
-  const colIndex = parseInt(document.getElementById("columnSelect")?.value || "0");
-  const lines = raw.split(/\n|\r\n/);   // split by newlines
-  const table = document.getElementById("sheet");
-  if (!table) return;
-
-  // table.rows[0] = header, [1] = selector row, [2+] = data rows
-  for (let i = 0; i < lines.length; i++) {
-    const rowIdx = i + 2;               // first data row is index 2
-    if (rowIdx >= table.rows.length) break; // don't go past available rows
-
-    const row = table.rows[rowIdx];
-    const cell = row.cells[colIndex + 1]; // +1 because col 0 is row number
-    if (cell) {
-      cell.textContent = lines[i].trim();
-    }
-  }
-
-  // optional: clear textarea + hide box
-  document.getElementById("columnData").value = "";
-  document.getElementById("uploadBox").style.display = "none";
-}
-
-
 
 
 // ===============================
@@ -362,13 +329,54 @@ function toggleReader() {
 
 
 
-
-
-
-
-
-
-
+function uploadColumn() {
+  console.log("🚀 UPLOAD CLICKED!");
+  
+  const data = document.getElementById("columnData").value.trim();
+  const colIndex = parseInt(document.getElementById("columnSelect").value);
+  
+  console.log("📊 Data:", data);
+  console.log("🔢 Column:", colIndex);
+  
+  if (!data) {
+    alert("❌ Please paste some data first!");
+    return;
+  }
+  
+  const table = document.getElementById("sheet");
+  if (!table) {
+    alert("❌ Table not found!");
+    return;
+  }
+  
+  console.log("✅ Table found:", table);
+  
+  const lines = data.split("\n");
+  let updated = 0;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const rowIndex = i + 1;
+    if (rowIndex > 26) break;
+    
+    const row = table.rows[rowIndex + 1];
+    if (!row) {
+      console.log("⚠️ Row not found:", rowIndex + 1);
+      continue;
+    }
+    
+    const cell = row.cells[colIndex + 1];
+    if (cell) {
+      cell.innerText = lines[i].trim();
+      updated++;
+      console.log("✅ Updated cell:", String.fromCharCode(65 + colIndex) + rowIndex);
+    } else {
+      console.log("❌ Cell not found: col", colIndex, "row", rowIndex);
+    }
+  }
+  
+  alert(`✅ Uploaded ${updated} cell(s) to column ${String.fromCharCode(65 + colIndex)}`);
+  document.getElementById("columnData").value = "";
+}
 
 
 
