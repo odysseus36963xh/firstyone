@@ -329,78 +329,87 @@ function toggleReader() {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===============================
+// Upload
+// ===============================
+
+
+
 window.uploadColumn = function () {
 
   console.log("🚀 UPLOAD CLICKED!");
 
-  const rawData =
+  const rawText =
     document.getElementById("columnData").value;
 
-  const startCell =
-    document.getElementById("startUploadCell")
-      .value
+  // OLD COLUMN SELECT STILL WORKS
+  const fallbackColumn =
+    parseInt(
+      document.getElementById("columnSelect").value
+    );
+
+  // NEW OPTIONAL CELL INPUT
+  const startCellInput =
+    document.getElementById("startCellUpload").value
       .trim()
       .toUpperCase();
 
   const direction =
     document.getElementById("uploadDirection").value;
 
-  if (!rawData.trim()) {
-    alert("❌ Please paste some data first!");
+  if (!rawText.trim()) {
+    alert("Please paste some text.");
     return;
   }
 
-  if (!startCell) {
-    alert("❌ Enter a start cell like A1");
-    return;
-  }
-
-  const table = document.getElementById("sheet");
-
-  if (!table) {
-    alert("❌ Table not found!");
-    return;
-  }
-
-  // -----------------------------
-  // PARSE CELL ID
-  // -----------------------------
-
-  const match = startCell.match(/^([A-Z]+)(\d+)$/);
-
-  if (!match) {
-    alert("❌ Invalid cell format. Example: A1");
-    return;
-  }
-
-  const colLetters = match[1];
-  const rowNumber = parseInt(match[2]);
-
-  // Convert A=0, B=1, Z=25
-  let startCol = 0;
-
-  for (let i = 0; i < colLetters.length; i++) {
-    startCol *= 26;
-    startCol += colLetters.charCodeAt(i) - 65 + 1;
-  }
-
-  startCol--;
-
-  let startRow = rowNumber - 1;
-
-  // -----------------------------
-  // CLEAN DATA
-  // -----------------------------
-
-  const lines = rawData
+  const lines = rawText
     .split(/\r?\n/)
-    .map(line => line.trim());
+    .map(x => x.trim());
 
-  console.log("📦 Lines:", lines.length);
+  let startCol = fallbackColumn;
+  let startRow = 0;
 
-  // -----------------------------
-  // AUTO EXPAND ROWS IF NEEDED
-  // -----------------------------
+  // ---------------------------------
+  // IF USER ENTERED A CELL
+  // ---------------------------------
+
+  if (startCellInput) {
+
+    const match =
+      startCellInput.match(/^([A-Z]+)(\d+)$/);
+
+    if (!match) {
+      alert("Invalid cell example: A1");
+      return;
+    }
+
+    const letters = match[1];
+    const numbers = parseInt(match[2]);
+
+    startCol = letters.charCodeAt(0) - 65;
+
+    startRow = numbers - 1;
+  }
+
+  // ---------------------------------
+  // AUTO EXPAND ROWS
+  // ---------------------------------
 
   let neededRows;
 
@@ -410,68 +419,57 @@ window.uploadColumn = function () {
     neededRows = startRow + 1;
   }
 
-  const currentRows = table.rows.length - 2;
+  const currentRows =
+    sheetTable.rows.length - 2;
 
   if (neededRows > currentRows) {
 
-    const rowsToAdd =
-      neededRows - currentRows;
-
-    console.log("➕ Adding rows:", rowsToAdd);
-
-    addNewRows(rowsToAdd);
+    addNewRows(
+      neededRows - currentRows
+    );
   }
 
-  // -----------------------------
-  // REFRESH ROWS
-  // -----------------------------
-
-  const allRows = table.rows;
-
-  let updated = 0;
-
-  // -----------------------------
-  // UPLOAD LOGIC
-  // -----------------------------
+  // ---------------------------------
+  // FILL CELLS
+  // ---------------------------------
 
   for (let i = 0; i < lines.length; i++) {
 
-    let targetRow;
-    let targetCol;
+    let rowIndex = startRow;
+    let colIndex = startCol;
 
     if (direction === "down") {
-
-      targetRow = startRow + i;
-      targetCol = startCol;
-
+      rowIndex += i;
     } else {
-
-      targetRow = startRow;
-      targetCol = startCol + i;
+      colIndex += i;
     }
 
-    const row = allRows[targetRow + 2];
+    const row =
+      sheetTable.rows[rowIndex + 2];
 
     if (!row) continue;
 
-    const cell = row.cells[targetCol + 1];
+    const cell =
+      row.cells[colIndex + 1];
 
     if (!cell) continue;
 
     cell.innerText = lines[i];
 
-    updated++;
-
     console.log(
-      `✅ Updated ${String.fromCharCode(65 + targetCol)}${targetRow + 1}`
+      "✅",
+      rowIndex,
+      colIndex,
+      lines[i]
     );
   }
 
-  alert(`✅ Uploaded ${updated} cells`);
+  alert("✅ Upload complete!");
 
-  document.getElementById("columnData").value = "";
+  // IMPORTANT:
+  // DOES NOT CLEAR TEXTAREA
+  // DOES NOT HIDE BOX
 };
-
 
 
 
