@@ -305,67 +305,7 @@ function uploadTable() {
 
 
 
-
-// ===============================
-// UPLOAD COLUMN (new feature)
-// ===============================
-function uploadColumn() {
-  const box = document.getElementById("uploadBox");
-  const textarea = box.querySelector("textarea");
-  const columnSelect = box.querySelector("select");
-  const uploadBtn = box.querySelector("button");
-
-  if (!uploadBtn.onclick) {
-    uploadBtn.onclick = function () {
-      const text = textarea.value.trim();
-      if (!text) {
-        alert("Please paste some column data first.");
-        return;
-      }
-
-      const lines = text.split(/\r?\n/);
-      const colLetter = columnSelect.value.split(" ")[1]; // "Column A" → "A"
-      const colIndex = colToIndex(colLetter); // 0-based
-
-      const table = document.getElementById("sheet");
-      if (!table) return;
-
-      // Start from data row (row index 2 in DOM = first editable row)
-      let rowIndex = 2;
-      for (let i = 0; i < lines.length; i++) {
-        if (!table.rows[rowIndex]) {
-          // auto-add new rows if needed
-          const newRow = table.insertRow();
-          const numberCell = newRow.insertCell();
-          numberCell.textContent = newRow.rowIndex - 1;
-          numberCell.className = "row-number";
-
-          for (let c = 0; c < 26; c++) {
-            const td = newRow.insertCell();
-            td.contentEditable = "true";
-          }
-        }
-
-        const cell = table.rows[rowIndex].cells[colIndex + 1];
-        if (cell) cell.textContent = lines[i];
-        rowIndex++;
-      }
-
-      box.style.display = "none";
-      textarea.value = "";
-      if (typeof flash === "function") flash("Column uploaded ✓");
-    };
-  }
-}
-
-// Make sure toggleUpload also wires the function
-function toggleUpload() {
-  const box = document.getElementById("uploadBox");
-  if (!box) return;
-  const isShown = box.style.display === "block";
-  box.style.display = isShown ? "none" : "block";
-  if (!isShown) uploadColumn(); // attach handler when opening
-}
+o
 
 
 
