@@ -44,6 +44,21 @@
   <button id="openFinder">Frequency Finder</button>
 </header>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
 <div id="uploadBox">
   <h3>Upload Data</h3>
 
@@ -54,10 +69,10 @@
 
   <br>
 
-  <br><br>
+  <!-- REMOVED: Column selector section -->
 
-  <!-- NEW OPTIONAL START CELL -->
-  <label>Start Cell</label>
+  <!-- START CELL (now required for column selection) -->
+  <label>Start Cell (e.g., A1, B5)</label>
 
   <input
     id="startCellUpload"
@@ -67,7 +82,7 @@
 
   <br><br>
 
-  <!-- NEW DIRECTION -->
+  <!-- DIRECTION -->
   <label>Direction</label>
 
   <select id="uploadDirection">
@@ -77,12 +92,32 @@
 
   <br><br>
 
-  <!-- SAME BUTTON -->
   <button onclick="uploadColumn()">
     Upload
   </button>
 </div>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
 <div id="toolbar">
   <label>Speed <input id="speed" type="range" min="0.5" max="2" step="0.1" value="1"></label>
   <label>Repeat Row <input id="repeatRow" type="number" min="1" value="1"></label>
