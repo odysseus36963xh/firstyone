@@ -353,18 +353,23 @@ window.uploadColumn = function () {
 
   console.log("🚀 UPLOAD CLICKED!");
 
-  const rawText = document.getElementById("columnData").value;
+  const rawText =
+    document.getElementById("columnData").value;
 
-  // ✅ PERMANENT FIX: Gracefully check if columnSelect exists first
-  const fallbackColumn = document.getElementById("columnSelect") 
-    ? parseInt(document.getElementById("columnSelect").value) 
-    : 0;
+  // OLD COLUMN SELECT STILL WORKS
+  const fallbackColumn =
+    parseInt(
+      document.getElementById("columnSelect").value
+    );
 
-  const startCellInput = document.getElementById("startCellUpload").value
-    .trim()
-    .toUpperCase();
+  // NEW OPTIONAL CELL INPUT
+  const startCellInput =
+    document.getElementById("startCellUpload").value
+      .trim()
+      .toUpperCase();
 
-  const direction = document.getElementById("uploadDirection").value;
+  const direction =
+    document.getElementById("uploadDirection").value;
 
   if (!rawText.trim()) {
     alert("Please paste some text.");
@@ -384,10 +389,11 @@ window.uploadColumn = function () {
 
   if (startCellInput) {
 
-    const match = startCellInput.match(/^([A-Z]+)(\d+)\(/);
+    const match =
+      startCellInput.match(/^([A-Z]+)(\d+)$/);
 
     if (!match) {
-      alert("Invalid cell, example: A1");
+      alert("Invalid cell example: A1");
       return;
     }
 
@@ -395,6 +401,7 @@ window.uploadColumn = function () {
     const numbers = parseInt(match[2]);
 
     startCol = letters.charCodeAt(0) - 65;
+
     startRow = numbers - 1;
   }
 
@@ -410,17 +417,19 @@ window.uploadColumn = function () {
     neededRows = startRow + 1;
   }
 
-  const currentRows = sheetTable.rows.length - 2;
+  const currentRows =
+    sheetTable.rows.length - 2;
 
   if (neededRows > currentRows) {
-    addNewRows(neededRows - currentRows);
+
+    addNewRows(
+      neededRows - currentRows
+    );
   }
 
   // ---------------------------------
   // FILL CELLS
   // ---------------------------------
-
-  let updated = 0;
 
   for (let i = 0; i < lines.length; i++) {
 
@@ -433,20 +442,36 @@ window.uploadColumn = function () {
       colIndex += i;
     }
 
-    const row = sheetTable.rows[rowIndex + 2];
+    const row =
+      sheetTable.rows[rowIndex + 2];
+
     if (!row) continue;
 
-    const cell = row.cells[colIndex + 1];
+    const cell =
+      row.cells[colIndex + 1];
+
     if (!cell) continue;
 
     cell.innerText = lines[i];
-    updated++;
+
+    console.log(
+      "✅",
+      rowIndex,
+      colIndex,
+      lines[i]
+    );
   }
 
-  alert(`✅ Uploaded \){updated} cell${updated === 1 ? "" : "s"}`);
+ alert(
+  `✅ Upload complete! ${lines.length} ${
+    lines.length === 1 ? "cell was" : "cells were"
+  } uploaded.`
+);
+
+  // IMPORTANT:
+  // DOES NOT CLEAR TEXTAREA
+  // DOES NOT HIDE BOX
 };
-
-
 
 
 
