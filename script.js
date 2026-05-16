@@ -356,7 +356,7 @@ function uploadColumn() {
   
   for (let i = 0; i < lines.length; i++) {
     const rowIndex = i + 1;
-    if (rowIndex > 26) break;
+   
     
     const row = table.rows[rowIndex + 1];
     if (!row) {
