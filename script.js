@@ -464,7 +464,11 @@ window.uploadColumn = function () {
     );
   }
 
-  alert("✅ Upload complete!");
+ alert(
+  `✅ Upload complete! ${lines.length} ${
+    lines.length === 1 ? "cell was" : "cells were"
+  } uploaded.`
+);
 
   // IMPORTANT:
   // DOES NOT CLEAR TEXTAREA
