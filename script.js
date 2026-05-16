@@ -350,7 +350,6 @@ function toggleReader() {
 // ===============================
 
 
-
 window.uploadColumn = function () {
 
   console.log("🚀 UPLOAD CLICKED!");
@@ -433,6 +432,8 @@ window.uploadColumn = function () {
   // FILL CELLS
   // ---------------------------------
 
+  let updated = 0;
+
   for (let i = 0; i < lines.length; i++) {
 
     let rowIndex = startRow;
@@ -456,6 +457,8 @@ window.uploadColumn = function () {
 
     cell.innerText = lines[i];
 
+    updated++;
+
     console.log(
       "✅",
       rowIndex,
@@ -464,7 +467,7 @@ window.uploadColumn = function () {
     );
   }
 
- alert(`✅ Uploaded ${updated} cells`);
+  alert(`✅ Uploaded ${updated} cell${updated === 1 ? "" : "s"}`);
 
   // IMPORTANT:
   // DOES NOT CLEAR TEXTAREA
