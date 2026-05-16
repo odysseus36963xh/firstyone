@@ -96,29 +96,45 @@
 </div>
 
 <script>
-  // TABLE GENERATION (runs before script.js)
-  const cols = 26, rows = 2600;
+  const cols = 26;
+  let currentRows = 26; // Start small for performance
+
   const table = document.getElementById("sheet");
   function colName(n) { return String.fromCharCode(65 + n); }
 
+  // Build headers
   let header = "<tr><th></th>";
   for (let c = 0; c < cols; c++) header += `<th>${colName(c)}</th>`;
   header += "</tr>";
 
+  // Build selector row
   let selector = "<tr><th></th>";
   for (let c = 0; c < cols; c++) {
     selector += `<th><select class='col-select'><option>Off</option><option>EN</option><option>IT</option><option>ES</option><option>FR</option><option>DE</option></select></th>`;
   }
   selector += "</tr>";
 
-  table.innerHTML += header + selector;
+  table.innerHTML = header + selector;
 
-  for (let r = 1; r <= rows; r++) {
-    let row = `<tr><th class="row-head">${r}</th>`;
-    for (let c = 0; c < cols; c++) row += `<td contenteditable="true"></td>`;
-    row += "</tr>";
-    table.innerHTML += row;
+  // Function to add rows dynamically
+  function ensureRows(minRows) {
+    if (minRows <= currentRows) return;
+
+    console.log(`Expanding table from ${currentRows} to ${minRows} rows`);
+    for (let r = currentRows + 1; r <= minRows; r++) {
+      let row = `<tr><th class="row-head">${r}</th>`;
+      for (let c = 0; c < cols; c++) row += `<td contenteditable="true"></td>`;
+      row += "</tr>";
+      table.insertAdjacentHTML('beforeend', row);
+    }
+    currentRows = minRows;
   }
+
+  // Generate initial 26 rows
+  ensureRows(26);
+
+  // Expose function globally so uploadColumn() can use it
+  window.ensureRows = ensureRows;
 </script>
 
 <script src="script.js"></script>
