@@ -329,15 +329,29 @@ function toggleReader() {
 
 
 
-function uploadColumn() {
+window.uploadColumn = function () {
 
   console.log("🚀 UPLOAD CLICKED!");
 
-  const rawData = document.getElementById("columnData").value;
-  const colIndex = parseInt(document.getElementById("columnSelect").value);
+  const rawData =
+    document.getElementById("columnData").value;
+
+  const startCell =
+    document.getElementById("startUploadCell")
+      .value
+      .trim()
+      .toUpperCase();
+
+  const direction =
+    document.getElementById("uploadDirection").value;
 
   if (!rawData.trim()) {
     alert("❌ Please paste some data first!");
+    return;
+  }
+
+  if (!startCell) {
+    alert("❌ Enter a start cell like A1");
     return;
   }
 
@@ -348,78 +362,115 @@ function uploadColumn() {
     return;
   }
 
-  // CLEAN + SPLIT LINES
+  // -----------------------------
+  // PARSE CELL ID
+  // -----------------------------
+
+  const match = startCell.match(/^([A-Z]+)(\d+)$/);
+
+  if (!match) {
+    alert("❌ Invalid cell format. Example: A1");
+    return;
+  }
+
+  const colLetters = match[1];
+  const rowNumber = parseInt(match[2]);
+
+  // Convert A=0, B=1, Z=25
+  let startCol = 0;
+
+  for (let i = 0; i < colLetters.length; i++) {
+    startCol *= 26;
+    startCol += colLetters.charCodeAt(i) - 65 + 1;
+  }
+
+  startCol--;
+
+  let startRow = rowNumber - 1;
+
+  // -----------------------------
+  // CLEAN DATA
+  // -----------------------------
+
   const lines = rawData
     .split(/\r?\n/)
     .map(line => line.trim());
 
-  console.log("📦 Total lines:", lines.length);
+  console.log("📦 Lines:", lines.length);
 
-  // CURRENT DATA ROWS
-  // subtract 2 because:
-  // row 0 = letters
-  // row 1 = language selectors
+  // -----------------------------
+  // AUTO EXPAND ROWS IF NEEDED
+  // -----------------------------
+
+  let neededRows;
+
+  if (direction === "down") {
+    neededRows = startRow + lines.length;
+  } else {
+    neededRows = startRow + 1;
+  }
+
   const currentRows = table.rows.length - 2;
 
-  console.log("📏 Current rows:", currentRows);
+  if (neededRows > currentRows) {
 
-  // AUTO EXPAND TABLE
-  if (lines.length > currentRows) {
+    const rowsToAdd =
+      neededRows - currentRows;
 
-    const rowsNeeded = lines.length - currentRows;
+    console.log("➕ Adding rows:", rowsToAdd);
 
-    console.log("➕ Adding rows:", rowsNeeded);
-
-    addNewRows(rowsNeeded);
+    addNewRows(rowsToAdd);
   }
+
+  // -----------------------------
+  // REFRESH ROWS
+  // -----------------------------
+
+  const allRows = table.rows;
 
   let updated = 0;
 
-  // REFRESH ROWS AFTER EXPANSION
-  const allRows = table.rows;
+  // -----------------------------
+  // UPLOAD LOGIC
+  // -----------------------------
 
-  // START FROM DATA ROW INDEX 2
   for (let i = 0; i < lines.length; i++) {
 
-    const row = allRows[i + 2];
+    let targetRow;
+    let targetCol;
 
-    if (!row) {
-      console.log("❌ Missing row:", i + 2);
-      continue;
+    if (direction === "down") {
+
+      targetRow = startRow + i;
+      targetCol = startCol;
+
+    } else {
+
+      targetRow = startRow;
+      targetCol = startCol + i;
     }
 
-    const cell = row.cells[colIndex + 1];
+    const row = allRows[targetRow + 2];
 
-    if (!cell) {
-      console.log("❌ Missing cell:", i);
-      continue;
-    }
+    if (!row) continue;
+
+    const cell = row.cells[targetCol + 1];
+
+    if (!cell) continue;
 
     cell.innerText = lines[i];
 
     updated++;
 
     console.log(
-      "✅ Updated:",
-      String.fromCharCode(65 + colIndex) + (i + 1)
+      `✅ Updated ${String.fromCharCode(65 + targetCol)}${targetRow + 1}`
     );
   }
 
-  alert(
-    `✅ Uploaded ${updated} rows into column ${String.fromCharCode(65 + colIndex)}`
-  );
+  alert(`✅ Uploaded ${updated} cells`);
 
-  // OPTIONAL CLEANUP
   document.getElementById("columnData").value = "";
-
-  // OPTIONAL HIDE
-  // document.getElementById("uploadBox").style.display = "none";
-}
-
-
-
-
-
+};
 
 
 
