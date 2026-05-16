@@ -381,7 +381,7 @@ window.uploadColumn = function () {
     .split(/\r?\n/)
     .map(x => x.trim());
 
-  let startCol = fallbackColumn;
+  let startCol = 0; // Default to Column A if no start cell given
   let startRow = 0;
 
   // ---------------------------------
