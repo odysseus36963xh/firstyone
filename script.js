@@ -353,18 +353,18 @@ window.uploadColumn = function () {
 
   console.log("🚀 UPLOAD CLICKED!");
 
-  const rawText =
-    document.getElementById("columnData").value;
+  const rawText = document.getElementById("columnData").value;
 
-  // REMOVED: const fallbackColumn = ...
-  
-  const startCellInput =
-    document.getElementById("startCellUpload").value
-      .trim()
-      .toUpperCase();
+  // ✅ PERMANENT FIX: Gracefully check if columnSelect exists first
+  const fallbackColumn = document.getElementById("columnSelect") 
+    ? parseInt(document.getElementById("columnSelect").value) 
+    : 0;
 
-  const direction =
-    document.getElementById("uploadDirection").value;
+  const startCellInput = document.getElementById("startCellUpload").value
+    .trim()
+    .toUpperCase();
+
+  const direction = document.getElementById("uploadDirection").value;
 
   if (!rawText.trim()) {
     alert("Please paste some text.");
@@ -375,19 +375,19 @@ window.uploadColumn = function () {
     .split(/\r?\n/)
     .map(x => x.trim());
 
-  // Default to column A (0) and row 1 (0) if no start cell
-  let startCol = 0;
+  let startCol = fallbackColumn;
   let startRow = 0;
 
   // ---------------------------------
-  // CHECK START CELL (NOW REQUIRED FOR COLUMN)
+  // IF USER ENTERED A CELL
   // ---------------------------------
+
   if (startCellInput) {
-    const match =
-      startCellInput.match(/^([A-Z]+)(\d+)$/);
+
+    const match = startCellInput.match(/^([A-Z]+)(\d+)\(/);
 
     if (!match) {
-      alert("Invalid cell format. Use like A1, B5, etc.");
+      alert("Invalid cell, example: A1");
       return;
     }
 
@@ -396,9 +396,6 @@ window.uploadColumn = function () {
 
     startCol = letters.charCodeAt(0) - 65;
     startRow = numbers - 1;
-  } else {
-    // If no start cell, default to A1
-    alert("No start cell specified. Defaulting to A1.");
   }
 
   // ---------------------------------
@@ -413,8 +410,7 @@ window.uploadColumn = function () {
     neededRows = startRow + 1;
   }
 
-  const currentRows =
-    sheetTable.rows.length - 2;
+  const currentRows = sheetTable.rows.length - 2;
 
   if (neededRows > currentRows) {
     addNewRows(neededRows - currentRows);
@@ -427,6 +423,7 @@ window.uploadColumn = function () {
   let updated = 0;
 
   for (let i = 0; i < lines.length; i++) {
+
     let rowIndex = startRow;
     let colIndex = startCol;
 
@@ -446,13 +443,8 @@ window.uploadColumn = function () {
     updated++;
   }
 
-  alert(`✅ Added ${updated} cell${updated === 1 ? '' : 's'} to ${startRow + 1}, ${String.fromCharCode(65 + startCol)}`);
-
-  // IMPORTANT:
-  // DOES NOT CLEAR TEXTAREA
-  // DOES NOT HIDE BOX
+  alert(`✅ Uploaded \){updated} cell${updated === 1 ? "" : "s"}`);
 };
-
 
 
 
