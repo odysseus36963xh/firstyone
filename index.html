@@ -58,74 +58,36 @@
 
 
 
-  
 <div id="uploadBox">
   <h3>Upload Data</h3>
 
   <textarea 
     id="columnData" 
-    placeholder="Paste data here"
+    placeholder="Paste your data here (one item per line)"
+    style="width:100%; height:160px; font-family:monospace;"
   ></textarea>
 
-  <br>
+  <br><br>
 
-   <!-- ORIGINAL COLUMN SELECT -->
-  <label>Column</label>
-
-  <select id="columnSelect">
-    <option value="0">Column A</option>
-    <option value="1">Column B</option>
-    <option value="2">Column C</option>
-    <option value="3">Column D</option>
-    <option value="4">Column E</option>
-    <option value="5">Column F</option>
-    <option value="6">Column G</option>
-    <option value="7">Column H</option>
-    <option value="8">Column I</option>
-    <option value="9">Column J</option>
-    <option value="10">Column K</option>
-    <option value="11">Column L</option>
-    <option value="12">Column M</option>
-    <option value="13">Column N</option>
-    <option value="14">Column O</option>
-    <option value="15">Column P</option>
-    <option value="16">Column Q</option>
-    <option value="17">Column R</option>
-    <option value="18">Column S</option>
-    <option value="19">Column T</option>
-    <option value="20">Column U</option>
-    <option value="21">Column V</option>
-    <option value="22">Column W</option>
-    <option value="23">Column X</option>
-    <option value="24">Column Y</option>
-    <option value="25">Column Z</option>
-  </select>
-
-
-  <!-- REMOVED: Column selector section -->
-
-  <!-- START CELL (now required for column selection) -->
-  <label>Start Cell (e.g., A1, B5)</label>
-
+  <label><strong>Start Cell</strong> (e.g. A1, B5, C12)</label><br>
   <input
     id="startCellUpload"
     type="text"
     placeholder="A1"
+    style="padding:8px; font-size:15px; width:130px;"
   >
 
   <br><br>
 
-  <!-- DIRECTION -->
-  <label>Direction</label>
-
-  <select id="uploadDirection">
-    <option value="down">Down</option>
-    <option value="across">Across</option>
+  <label><strong>Direction</strong></label><br>
+  <select id="uploadDirection" style="padding:8px; font-size:15px;">
+    <option value="down">Down (vertical)</option>
+    <option value="across">Across (horizontal)</option>
   </select>
 
   <br><br>
 
-  <button onclick="uploadColumn()">
+  <button onclick="uploadColumn()" style="padding:12px 28px; font-size:16px;">
     Upload
   </button>
 </div>
