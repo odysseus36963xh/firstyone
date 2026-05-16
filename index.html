@@ -45,22 +45,22 @@
 </header>
 
 <div id="uploadBox">
-  <h3>Upload Column</h3>
+  <h3>Upload Data</h3>
 
-  <textarea id="columnData" placeholder="Paste column data here"></textarea>
+  <textarea id="columnData" placeholder="Paste data here"></textarea>
 
+  <br>
 
+  <label>Start Cell</label>
+  <input id="startUploadCell" type="text" placeholder="A1">
+
+  <label>Direction</label>
+  <select id="uploadDirection">
+    <option value="down">Down</option>
+    <option value="across">Across</option>
+  </select>
 
   <br><br>
-
-<label>Start Cell</label>
-<input id="startUploadCell" type="text" placeholder="A1">
-
-<label>Direction</label>
-<select id="uploadDirection">
-  <option value="down">Down</option>
-  <option value="across">Across</option>
-</select>
 
   <button onclick="uploadColumn()">Upload</button>
 </div>
