@@ -349,7 +349,6 @@ function toggleReader() {
 // Upload
 // ===============================
 
-
 window.uploadColumn = function () {
 
   console.log("🚀 UPLOAD CLICKED!");
@@ -357,13 +356,8 @@ window.uploadColumn = function () {
   const rawText =
     document.getElementById("columnData").value;
 
-  // OLD COLUMN SELECT STILL WORKS
-  const fallbackColumn =
-    parseInt(
-      document.getElementById("columnSelect").value
-    );
-
-  // NEW OPTIONAL CELL INPUT
+  // REMOVED: const fallbackColumn = ...
+  
   const startCellInput =
     document.getElementById("startCellUpload").value
       .trim()
@@ -381,20 +375,19 @@ window.uploadColumn = function () {
     .split(/\r?\n/)
     .map(x => x.trim());
 
-  let startCol = 0; // Default to Column A if no start cell given
+  // Default to column A (0) and row 1 (0) if no start cell
+  let startCol = 0;
   let startRow = 0;
 
   // ---------------------------------
-  // IF USER ENTERED A CELL
+  // CHECK START CELL (NOW REQUIRED FOR COLUMN)
   // ---------------------------------
-
   if (startCellInput) {
-
     const match =
       startCellInput.match(/^([A-Z]+)(\d+)$/);
 
     if (!match) {
-      alert("Invalid cell example: A1");
+      alert("Invalid cell format. Use like A1, B5, etc.");
       return;
     }
 
@@ -402,8 +395,10 @@ window.uploadColumn = function () {
     const numbers = parseInt(match[2]);
 
     startCol = letters.charCodeAt(0) - 65;
-
     startRow = numbers - 1;
+  } else {
+    // If no start cell, default to A1
+    alert("No start cell specified. Defaulting to A1.");
   }
 
   // ---------------------------------
@@ -422,10 +417,7 @@ window.uploadColumn = function () {
     sheetTable.rows.length - 2;
 
   if (neededRows > currentRows) {
-
-    addNewRows(
-      neededRows - currentRows
-    );
+    addNewRows(neededRows - currentRows);
   }
 
   // ---------------------------------
@@ -435,7 +427,6 @@ window.uploadColumn = function () {
   let updated = 0;
 
   for (let i = 0; i < lines.length; i++) {
-
     let rowIndex = startRow;
     let colIndex = startCol;
 
@@ -445,35 +436,22 @@ window.uploadColumn = function () {
       colIndex += i;
     }
 
-    const row =
-      sheetTable.rows[rowIndex + 2];
-
+    const row = sheetTable.rows[rowIndex + 2];
     if (!row) continue;
 
-    const cell =
-      row.cells[colIndex + 1];
-
+    const cell = row.cells[colIndex + 1];
     if (!cell) continue;
 
     cell.innerText = lines[i];
-
     updated++;
-
-    console.log(
-      "✅",
-      rowIndex,
-      colIndex,
-      lines[i]
-    );
   }
 
-  alert(`✅ Uploaded ${updated} cell${updated === 1 ? "" : "s"}`);
+  alert(`✅ Added ${updated} cell${updated === 1 ? '' : 's'} to ${startRow + 1}, ${String.fromCharCode(65 + startCol)}`);
 
   // IMPORTANT:
   // DOES NOT CLEAR TEXTAREA
   // DOES NOT HIDE BOX
 };
-
 
 
 
