@@ -395,6 +395,65 @@ function uploadColumn() {
     }
   });
 
+  textarea.va// ===============================
+// UPLOAD COLUMN
+// ===============================
+function uploadColumn() {
+  const textarea = document.getElementById("columnData");
+  const select = document.getElementById("columnSelect");
+  const table = document.getElementById("sheet");
+
+  if (!textarea || !select || !table) {
+    alert("Upload UI not found.");
+    return;
+  }
+
+  // Split pasted text into lines
+  const lines = textarea.value
+    .split(/\r?\n/)
+    .map(line => line.trim());
+
+  if (!lines.length || lines.every(l => l === "")) {
+    alert("Paste some column data first.");
+    return;
+  }
+
+  const colIndex = parseInt(select.value);
+
+  // table rows:
+  // 0 = A B C headers
+  // 1 = language selectors
+  // 2+ = actual data rows
+
+  lines.forEach((text, i) => {
+    const rowIndex = i + 2;
+
+    // Create row if missing
+    while (table.rows.length <= rowIndex) {
+      const newRow = table.insertRow();
+
+      // row number
+      const numberCell = document.createElement("th");
+      numberCell.className = "row-head";
+      numberCell.textContent = table.rows.length - 2;
+      newRow.appendChild(numberCell);
+
+      // create 26 editable cells
+      for (let c = 0; c < 26; c++) {
+        const td = document.createElement("td");
+        td.contentEditable = "true";
+        newRow.appendChild(td);
+      }
+    }
+
+    const row = table.rows[rowIndex];
+    const cell = row.cells[colIndex + 1]; // +1 skips row number
+
+    if (cell) {
+      cell.textContent = text;
+    }
+  });
+
   textarea.value = "";
 
   if (typeof flash === "function") {
@@ -402,12 +461,7 @@ function uploadColumn() {
   } else {
     alert("Column uploaded successfully.");
   }
-}    <option value="24">Column Y</option>
-    <option value="25">Column Z</option>
-  </select>
-
-  <button onclick="uploadColumn()">Upload</button>
-</div>
+}
 
 
 
