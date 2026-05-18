@@ -373,7 +373,7 @@ window.uploadColumn = function () {
   if (!rawText) {
     alert("Please paste some text.");
     return;
-  }G
+  }
 
   const startCellInput = document.getElementById("startCellUpload").value.trim().toUpperCase();
   const direction = document.getElementById("uploadDirection").value;
