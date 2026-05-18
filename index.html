@@ -36,7 +36,7 @@
 <header>
   <button onclick="saveTable()">Save Table Data</button>
 <button onclick="uploadTable()">Upload Table</button>
-
+<button onclick="toggleExtract()">Extract Column</button>
   
   <button onclick="toggleUpload()">Upload Column</button>
   <button onclick="toggleReader()">Reader Options</button>
@@ -94,43 +94,32 @@
 </div>
 
 
-  <!-- Extract Range Box -->
-<div id="extractBox" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); 
-     background:#1a1a1a; padding:20px; border-radius:10px; box-shadow:0 4px 20px rgba(0,0,0,0.7); z-index:10000; 
-     border:2px solid #333; min-width:320px;">
-  <h3 style="margin:0 0 15px 0; color:#5ea4ff;">Extract Cell Range</h3>
-  
-  <div style="margin-bottom:12px;">
-    <label style="color:#aaa; font-size:13px;">Start Cell:</label>
-    <input id="extractStart" type="text" placeholder="A1" style="width:100%; padding:8px; margin-top:5px; 
-           background:#0d0d0d; color:#e0e0e0; border:1px solid #444; border-radius:5px;">
+
+
+<!-- ===============================
+     EXTRACT POPUP BOX
+================================ -->
+<div id="extractBox" style="display:none; margin-top:10px; border:1px solid #ccc; padding:10px; border-radius:8px; background:#111; color:#fff;">
+
+  <h3>Extract Range</h3>
+
+  <label>Start Cell:</label>
+  <input type="text" id="extractStart" placeholder="A1">
+
+  <label>End Cell:</label>
+  <input type="text" id="extractEnd" placeholder="C5">
+
+  <div style="margin-top:10px;">
+    <button onclick="extractRange('copy')">📋 Copy</button>
+    <button onclick="extractRange('remove')">🗑 Remove</button>
   </div>
-  
-  <div style="margin-bottom:15px;">
-    <label style="color:#aaa; font-size:13px;">End Cell:</label>
-    <input id="extractEnd" type="text" placeholder="C5" style="width:100%; padding:8px; margin-top:5px; 
-           background:#0d0d0d; color:#e0e0e0; border:1px solid #444; border-radius:5px;">
-  </div>
-  
-  <div style="display:flex; gap:10px; justify-content:flex-end;">
-    <button onclick="toggleExtract()" style="padding:8px 16px; background:#444; color:#fff; border:none; 
-                    border-radius:5px; cursor:pointer;">Cancel</button>
-    <button onclick="extractRange('copy')" style="padding:8px 16px; background:#2b7cff; color:#fff; 
-                    border:none; border-radius:5px; cursor:pointer;">Copy Range</button>
-    <button onclick="extractRange('remove')" style="padding:8px 16px; background:#c62828; color:#fff; 
-                    border:none; border-radius:5px; cursor:pointer;">Remove Range</button>
-  </div>
+
 </div>
 
-<!-- Extract Button (add to your main toolbar) -->
-<button id="openExtract" onclick="toggleExtract()" style="padding:10px; background:#6a1b9a; color:#fff; 
-        border:none; border-radius:5px; cursor:pointer; margin-left:10px;">📋 Extract Range</button>
 
-
-
-
-
-
+<!-- ===============================
+     EXTRACT POPUP BOX
+================================ -->
 
 
 
