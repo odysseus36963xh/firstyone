@@ -413,73 +413,104 @@ window.uploadColumn = function () {
 
 
 // ===============================
-// EXTRACT RANGE (COPY / REMOVE)
+// EXTRACT RANGE (Copy/Remove)
 // ===============================
-function extractRange(mode) {
+function toggleExtract() {
+  const box = document.getElementById("extractBox");
+  if (!box) return;
+  box.style.display = box.style.display === "block" ? "none" : "block";
+}
+
+function extractRange(action) {
+  const startInput = document.getElementById("extractStart")?.value.trim().toUpperCase();
+  const endInput = document.getElementById("extractEnd")?.value.trim().toUpperCase();
+  
+  if (!startInput || !endInput) {
+    alert("Please enter both start and end cells.");
+    return;
+  }
+
+  // Parse cell references
+  const startMatch = startInput.match(/^([A-Z]+)(\d+)$/);
+  const endMatch = endInput.match(/^([A-Z]+)(\d+)$/);
+  
+  if (!startMatch || !endMatch) {
+    alert("Invalid cell format. Use A1, B5, etc.");
+    return;
+  }
+
+  // Convert to 0-based indices (accounting for header rows)
+  const startCol = startMatch[1].charCodeAt(0) - 65;
+  const startRow = parseInt(startMatch[2]) - 1;
+  const endCol = endMatch[1].charCodeAt(0) - 65;
+  const endRow = parseInt(endMatch[2]) - 1;
+
+  // Validate range
+  if (startRow > endRow || startCol > endCol) {
+    alert("Invalid range. Start cell must be top-left of end cell.");
+    return;
+  }
+
   const table = document.getElementById("sheet");
   if (!table) {
     alert("Table not found.");
     return;
   }
 
-  const startRef = document.getElementById("extractStart").value.trim().toUpperCase();
-  const endRef = document.getElementById("extractEnd").value.trim().toUpperCase();
+  const data = [];
+  let cellsAffected = 0;
 
-  const start = parseCell(startRef);
-  const end = parseCell(endRef);
-
-  if (!start || !end) {
-    alert("Invalid cell format. Use format like A1 or C5.");
-    return;
-  }
-
-  // Normalize range (in case user reverses them)
-  const startRow = Math.min(start.row, end.row);
-  const endRow   = Math.max(start.row, end.row);
-  const startCol = Math.min(start.col, end.col);
-  const endCol   = Math.max(start.col, end.col);
-
-  let extractedData = [];
-
+  // Iterate through the range
   for (let r = startRow; r <= endRow; r++) {
-    const tableRow = table.rows[r + 1]; // +1 because of header
-    if (!tableRow) continue;
-
-    let rowData = [];
-
+    const row = table.rows[r + 2]; // +2 accounts for header rows
+    if (!row) continue;
+    
+    const rowData = [];
     for (let c = startCol; c <= endCol; c++) {
-      const cell = tableRow.cells[c + 1]; // +1 skip row number column
+      const cell = row.cells[c + 1]; // +1 skips row number column
       if (!cell) continue;
-
-      rowData.push(cell.innerText || "");
-
-      if (mode === "remove") {
+      
+      if (action === 'copy') {
+        rowData.push(cell.innerText || "");
+      } else if (action === 'remove') {
         cell.innerText = "";
       }
+      cellsAffected++;
     }
-
-    extractedData.push(rowData.join("\t"));
+    if (action === 'copy' && rowData.length > 0) {
+      data.push(rowData);
+    }
   }
 
-  if (mode === "copy") {
-    const textToCopy = extractedData.join("\n");
-
-    navigator.clipboard.writeText(textToCopy).then(() => {
-      alert("✅ Range copied to clipboard!");
-    }).catch(() => {
-      alert("Copy failed. Browser may block clipboard.");
+  if (action === 'copy') {
+    if (data.length === 0) {
+      alert("No data found in selected range.");
+      return;
+    }
+    
+    // Convert to tab-separated format (Excel-friendly)
+    const tsv = data.map(row => row.join('\t')).join('\n');
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(tsv).then(() => {
+      alert(`✅ Copied ${cellsAffected} cells to clipboard (TSV format).`);
+      toggleExtract(); // Close dialog
+    }).catch(err => {
+      // Fallback for non-HTTPS
+      const ta = document.createElement("textarea");
+      ta.value = tsv;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      alert(`✅ Copied ${cellsAffected} cells (fallback mode).`);
+      toggleExtract();
     });
-  }
-
-  if (mode === "remove") {
-    alert("✅ Range cleared!");
+  } else if (action === 'remove') {
+    alert(`🗑️ Removed content from ${cellsAffected} cells.`);
+    toggleExtract();
   }
 }
-
-
-// ===============================
-// th end of EXTRACT RANGE (COPY / REMOVE)
-// ===============================
 
 
 
