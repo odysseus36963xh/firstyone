@@ -356,7 +356,7 @@ window.uploadColumn = function () {
   if (!rawText) {
     alert("Please paste some text.");
     return;
-  }
+  }G
 
   const startCellInput = document.getElementById("startCellUpload").value.trim().toUpperCase();
   const direction = document.getElementById("uploadDirection").value;
@@ -412,13 +412,74 @@ window.uploadColumn = function () {
 };
 
 
+// ===============================
+// EXTRACT RANGE (COPY / REMOVE)
+// ===============================
+function extractRange(mode) {
+  const table = document.getElementById("sheet");
+  if (!table) {
+    alert("Table not found.");
+    return;
+  }
+
+  const startRef = document.getElementById("extractStart").value.trim().toUpperCase();
+  const endRef = document.getElementById("extractEnd").value.trim().toUpperCase();
+
+  const start = parseCell(startRef);
+  const end = parseCell(endRef);
+
+  if (!start || !end) {
+    alert("Invalid cell format. Use format like A1 or C5.");
+    return;
+  }
+
+  // Normalize range (in case user reverses them)
+  const startRow = Math.min(start.row, end.row);
+  const endRow   = Math.max(start.row, end.row);
+  const startCol = Math.min(start.col, end.col);
+  const endCol   = Math.max(start.col, end.col);
+
+  let extractedData = [];
+
+  for (let r = startRow; r <= endRow; r++) {
+    const tableRow = table.rows[r + 1]; // +1 because of header
+    if (!tableRow) continue;
+
+    let rowData = [];
+
+    for (let c = startCol; c <= endCol; c++) {
+      const cell = tableRow.cells[c + 1]; // +1 skip row number column
+      if (!cell) continue;
+
+      rowData.push(cell.innerText || "");
+
+      if (mode === "remove") {
+        cell.innerText = "";
+      }
+    }
+
+    extractedData.push(rowData.join("\t"));
+  }
+
+  if (mode === "copy") {
+    const textToCopy = extractedData.join("\n");
+
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      alert("✅ Range copied to clipboard!");
+    }).catch(() => {
+      alert("Copy failed. Browser may block clipboard.");
+    });
+  }
+
+  if (mode === "remove") {
+    alert("✅ Range cleared!");
+  }
+}
 
 
-
-
-
-
-
+// ===============================
+// th end of EXTRACT RANGE (COPY / REMOVE)
+// ===============================
 
 
 
