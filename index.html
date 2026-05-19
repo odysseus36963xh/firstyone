@@ -25,6 +25,38 @@
     td:hover{background:#f8fbff;}
     td:focus{outline:none;border:2px solid #1a73e8;z-index:50;}
     .col-select{width:90%;border:none;background:transparent;font-size:11px;color:#5f6368;}
+
+/* The Card Popup Effect */
+#mediaPopup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -40%) scale(0.8); /* Starts slightly lower and smaller */
+    opacity: 0;
+    z-index: 9999;
+    background: #141414;
+    padding: 12px;
+    border-radius: 12px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+    pointer-events: none; /* Let clicks pass through when invisible */
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy "lift up" effect */
+}
+
+/* When active, it lifts up and scales to full size */
+#mediaPopup.show {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+}
+
+#mediaPopup img, #mediaPopup video {
+    max-width: 80vw;
+    max-height: 70vh;
+    border-radius: 8px;
+    display: block;
+}
+
+    
+    
    /* 1. Bulletproof Yellow Highlight for Light Columns */
 td.reading, 
 tr.reading td {
@@ -89,6 +121,20 @@ td:nth-child(even) .col-select option {
   
 <button onclick="toggleExtract()">Extract Column</button>
   <button onclick="toggleReader()">Reader Options</button>
+
+<!-- Hidden file input -->
+<input type="file" id="cellFileInput" accept="image/jpeg, audio/mp3, audio/mpeg, video/webm" style="display:none">
+
+<!-- Button to trigger the upload -->
+<button id="attachMediaBtn">📎 Attach Media to Cell</button>
+
+<!-- The invisible popup container -->
+<div id="mediaPopup"></div>
+
+
+
+  
+  
   <button onclick="startReading()">Start Reading</button>
   <button onclick="stopReading()">Stop</button>
   <button id="openFinder">Frequency Finder</button>
