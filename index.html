@@ -26,23 +26,44 @@
     td:focus{outline:none;border:2px solid #1a73e8;z-index:50;}
     .col-select{width:90%;border:none;background:transparent;font-size:11px;color:#5f6368;}
 
-/* The Card Popup Effect */
+
+ /* 1. The Floating Paperclip Button */
+#floatingClip {
+    position: absolute;
+    display: none; /* Hidden until a cell is clicked */
+    background: #1a73e8;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 12px;
+    cursor: pointer;
+    z-index: 1000;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    transition: transform 0.1s;
+}
+
+#floatingClip:hover {
+    background: #1765cc;
+    transform: scale(1.1);
+}
+
+/* 2. The Card Popup Effect (For Images/Video) */
 #mediaPopup {
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -40%) scale(0.8); /* Starts slightly lower and smaller */
+    transform: translate(-50%, -40%) scale(0.8);
     opacity: 0;
     z-index: 9999;
     background: #141414;
     padding: 12px;
     border-radius: 12px;
     box-shadow: 0 15px 40px rgba(0,0,0,0.6);
-    pointer-events: none; /* Let clicks pass through when invisible */
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy "lift up" effect */
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* When active, it lifts up and scales to full size */
 #mediaPopup.show {
     transform: translate(-50%, -50%) scale(1);
     opacity: 1;
@@ -54,7 +75,7 @@
     border-radius: 8px;
     display: block;
 }
-
+    
     
     
    /* 1. Bulletproof Yellow Highlight for Light Columns */
