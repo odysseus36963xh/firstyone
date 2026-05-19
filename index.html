@@ -30,6 +30,39 @@
     ::-webkit-scrollbar-track{background:#f1f1f1;}
     ::-webkit-scrollbar-thumb{background:#c1c1c1;border-radius:20px;}
     ::-webkit-scrollbar-thumb:hover{background:#a8a8a8;}
+
+    Thanks for providing your CSS! Because you are using a standard HTML `<table`> with `<th>` and `<td>` elements, we can easily target alternating columns using the `:nth-child(even)` selector. 
+
+Since your first column acts as a sticky row header (`.row-head`), targeting the "even" columns will perfectly highlight your 2nd, 4th, 6th columns, etc.
+
+Just **add this code to the very bottom** of your existing CSS block:
+
+```css
+/* 1. Make every other column black with white text */
+th:nth-child(even),
+td:nth-child(even) {
+    background-color: #000000;
+    color: #ffffff;
+}
+
+/* 2. Update the hover color for the black columns so the white text doesn't disappear */
+td:nth-child(even):hover {
+    background-color: #333333; 
+    color: #ffffff;
+}
+
+/* 3. Ensure any .col-select dropdowns in the black columns are also white and readable */
+th:nth-child(even) .col-select,
+td:nth-child(even) .col-select {
+    color: #ffffff;
+}
+```
+
+### Why I added parts 2 & 3:
+* **Hover fix:** In your original CSS, you have `td:hover { background: #f8fbff; }` (a very light blue). If a user hovered over your new black column, the background would turn light blue, but the text would stay white—making it impossible to read! Part 2 fixes this by giving the black columns a dark-gray hover effect instead.
+* **Dropdown fix:** You have a `.col-select` class with dark gray text (`color:#5f6368;`). Part 3 ensures that if this dropdown is placed inside a black column, its text turns white so it remains visible. 
+
+Just copy and paste that right below your `::-webkit-scrollbar-thumb:hover` rule and it will work perfectly!
   </style>
 </head>
 <body>
