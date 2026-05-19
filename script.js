@@ -15,6 +15,167 @@ voices = speechSynthesis.getVoices();
 speechSynthesis.onvoiceschanged = loadVoices;
 loadVoices();
 
+
+// ===============================
+// AUDIO RECORDING + MP3 EXPORT
+// ===============================
+let mediaRecorder = null;
+let audioChunks = [];
+let audioContext = null;
+let audioDestination = null;
+
+async function initializeRecorder() {
+  try {
+    // Get microphone access
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    
+    // Create audio context for mixing speaker + mic
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    // Create recorder for speaker output
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = (event) => {
+      audioChunks.push(event.data);
+    };
+
+    mediaRecorder.onstop = async () => {
+      await saveRecordingAsMP3();
+    };
+
+    return true;
+  } catch (err) {
+    alert("❌ Microphone access denied: " + err.message);
+    return false;
+  }
+}
+
+async function startRecording() {
+  const recordBtn = document.getElementById("recordBtn");
+  const stopBtn = document.getElementById("stopRecordBtn");
+  const status = document.getElementById("recordingStatus");
+
+  const ready = await initializeRecorder();
+  if (!ready) return;
+
+  mediaRecorder.start();
+  recordBtn.style.display = "none";
+  stopBtn.style.display = "inline-block";
+  status.style.display = "block";
+  
+  console.log("🎙️ Recording started");
+}
+
+function stopRecording() {
+  if (!mediaRecorder || mediaRecorder.state === "inactive") return;
+  
+  mediaRecorder.stop();
+  
+  document.getElementById("recordBtn").style.display = "inline-block";
+  document.getElementById("stopRecordBtn").style.display = "none";
+  document.getElementById("recordingStatus").style.display = "none";
+  
+  console.log("⏹️ Recording stopped");
+}
+
+async function saveRecordingAsMP3() {
+  if (!audioChunks.length) {
+    alert("No audio recorded.");
+    return;
+  }
+
+  // Create blob from audio chunks
+  const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+
+  // Show processing message
+  const status = document.getElementById("recordingStatus");
+  status.textContent = "⏳ Converting to MP3...";
+  status.style.background = "#3498db";
+  status.style.display = "block";
+
+  try {
+    // Convert WebM to MP3 using FFmpeg WASM
+    const { FFmpeg, toBlobURL } = FFmpeg;
+    const ffmpeg = new FFmpeg.FFmpeg();
+
+    const coreURL = await toBlobURL(
+      `https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js`,
+      'text/javascript',
+    );
+    const wasmURL = await toBlobURL(
+      `https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/ffmpeg-core.wasm`,
+      'application/wasm',
+    );
+
+    ffmpeg.load({ coreURL, wasmURL });
+
+    if (!ffmpeg.isLoaded()) {
+      await ffmpeg.load();
+    }
+
+    // Write blob to FFmpeg filesystem
+    const inputFileName = "input.webm";
+    const outputFileName = "output.mp3";
+
+    const data = await audioBlob.arrayBuffer();
+    ffmpeg.FS("writeFile", inputFileName, new Uint8Array(data));
+
+    // Convert to MP3
+    await ffmpeg.run("-i", inputFileName, "-q:a", "5", outputFileName);
+
+    // Read result
+    const output = ffmpeg.FS("readFile", outputFileName);
+    const mp3Blob = new Blob([output.buffer], { type: "audio/mpeg" });
+
+    // Cleanup
+    ffmpeg.FS("unlink", inputFileName);
+    ffmpeg.FS("unlink", outputFileName);
+
+    // Download MP3
+    downloadMP3(mp3Blob);
+
+    status.textContent = "✅ MP3 saved!";
+    status.style.background = "#27ae60";
+    setTimeout(() => {
+      status.style.display = "none";
+    }, 2000);
+
+  } catch (err) {
+    console.error("FFmpeg error:", err);
+    alert("⚠️ MP3 conversion failed. Saving as WAV instead...");
+    downloadWAV(audioChunks);
+  }
+}
+
+function downloadMP3(blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `recording_${getTimestamp()}.mp3`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function downloadWAV(chunks) {
+  const blob = new Blob(chunks, { type: "audio/webm" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `recording_${getTimestamp()}.webm`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+
+
+
 // ===============================
 // UTIL: COLUMN + CELL PARSING
 // ===============================
@@ -815,3 +976,31 @@ document.getElementById("openFinder").addEventListener("click", () => {
 
   newTab.document.close();
 });
+
+
+
+
+
+
+
+
+// ===============================
+// RECORDER BUTTON EVENTS
+// ===============================
+document.getElementById("recordBtn")?.addEventListener("click", startRecording);
+document.getElementById("stopRecordBtn")?.addEventListener("click", stopRecording);
+
+// Show record button only when reader is running
+const originalStartReading = window.startReading;
+window.startReading = async function() {
+  document.getElementById("recordBtn").style.display = "inline-block";
+  return originalStartReading.call(this);
+};
+
+const originalStopReading = window.stopReading;
+window.stopReading = function() {
+  if (mediaRecorder && mediaRecorder.state === "recording") {
+    stopRecording();
+  }
+  return originalStopReading.call(this);
+};
