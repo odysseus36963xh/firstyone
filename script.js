@@ -164,6 +164,90 @@ function getVoice(langCode) {
   return voices.find(v => v.lang?.toLowerCase().startsWith(lang));
 }
 
+
+
+
+// ===============================
+// PAPERCLIP & MEDIA ATTACHMENT
+// ===============================
+
+// 1. Inject the necessary HTML into the body dynamically
+document.body.insertAdjacentHTML('beforeend', `
+  <input type="file" id="cellFileInput" accept="image/jpeg, audio/mp3, audio/mpeg, video/webm" style="display:none">
+  <button id="floatingClip" contenteditable="false" title="Attach Media">📎</button>
+  <div id="mediaPopup"></div>
+`);
+
+const floatingClip = document.getElementById("floatingClip");
+const fileInput = document.getElementById("cellFileInput");
+const sheetWrap = document.getElementById("sheetWrap");
+let activeCell = null;
+
+// 2. Show the floating paperclip when a cell gets clicked (focused)
+document.getElementById("sheet").addEventListener("focusin", (e) => {
+    if (e.target.tagName === "TD") {
+        activeCell = e.target;
+        
+        // Calculate cell position and place the button in the top-right corner
+        const rect = activeCell.getBoundingClientRect();
+        
+        floatingClip.style.display = "block";
+        // Position it relative to the document
+        floatingClip.style.top = (window.scrollY + rect.top + 4) + "px";
+        floatingClip.style.left = (window.scrollX + rect.right - 28) + "px";
+    }
+});
+
+// 3. Hide paperclip when scrolling so it doesn't float away from the cell
+sheetWrap.addEventListener("scroll", () => {
+    floatingClip.style.display = "none";
+});
+
+// Hide paperclip if user clicks completely outside the table
+document.addEventListener("mousedown", (e) => {
+    if (e.target !== floatingClip && e.target.tagName !== "TD") {
+        floatingClip.style.display = "none";
+    }
+});
+
+// 4. When the paperclip is clicked, trigger the file upload
+floatingClip.addEventListener("mousedown", (e) => {
+    e.preventDefault(); // This stops the cell from losing focus when clicked!
+    if (activeCell) fileInput.click();
+});
+
+// 5. Handle the file attachment to the cell
+fileInput.addEventListener("change", function(e) {
+    const file = e.target.files[0];
+    if (!file || !activeCell) return;
+
+    // Create a temporary URL for the file
+    const fileUrl = URL.createObjectURL(file);
+    
+    // Store the URL and Type inside the cell's hidden dataset
+    activeCell.dataset.mediaUrl = fileUrl;
+    activeCell.dataset.mediaType = file.type;
+
+    // Add a visual emoji so the user knows a file is attached
+    if (file.type.startsWith("image")) {
+        activeCell.innerHTML += " 🖼️";
+    } else if (file.type.startsWith("audio")) {
+        activeCell.innerHTML += " 🎵";
+    } else if (file.type.startsWith("video")) {
+        activeCell.innerHTML += " 🎥";
+    }
+    
+    // Clean up
+    this.value = ""; 
+    floatingClip.style.display = "none"; 
+    
+    // Move cursor back to the end of the text so they can keep typing
+    placeCaretAtEnd(activeCell); 
+});
+
+
+
+
 // ===============================
 // SPEAK FUNCTION
 // ===============================
