@@ -233,6 +233,9 @@ function saveTable() {
 // ===============================
 // UPLOAD TABLE (harmonised)
 // ===============================
+// ===============================
+// UPLOAD TABLE (harmonised) - FIXED
+// ===============================
 function uploadTable() {
   const input = document.createElement("input");
   input.type = "file";
@@ -277,6 +280,10 @@ function uploadTable() {
           rowArray.forEach((text) => {
             const td = newRow.insertCell();
             td.textContent = text || "";
+            
+            // 👇👇👇 THIS IS THE FIX 👇👇👇
+            td.contentEditable = "true"; 
+            // 👆👆👆 ADD THIS LINE 👆👆👆
           });
         });
 
@@ -296,8 +303,6 @@ function uploadTable() {
 
   input.click();
 }
-
-
 
 
 
