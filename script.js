@@ -17,128 +17,124 @@ loadVoices();
 
 
 // ===============================
-// AUDIO RECORDER (tab audio — no mic needed)
+// AUDIO RECORDING (Speaker Only - Static App)
 // ===============================
+let audioContext = null;
 let mediaRecorder = null;
-let recordedChunks = [];
-let recordingStream = null;
-let recordingStartTime = null;
+let audioChunks = [];
+let isRecording = false;
+let recordingStartTime = 0;
 let recordingTimerInterval = null;
 
-async function startRecording() {
+async function initializeRecorder() {
   try {
-    recordingStream = await navigator.mediaDevices.getDisplayMedia({
-      video: true,
-      audio: true
-    });
-
-    const audioTracks = recordingStream.getAudioTracks();
-    if (audioTracks.length === 0) {
-      alert("❌ No audio captured!\n\nYou must check 'Share tab audio' in the dialog.");
-      recordingStream.getTracks().forEach(t => t.stop());
-      recordingStream = null;
-      return;
+    // Get system audio + mic access
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
     }
 
-    const audioStream = new MediaStream(audioTracks);
-    recordedChunks = [];
-    mediaRecorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm' });
+    if (audioContext.state === 'suspended') {
+      await audioContext.resume();
+    }
 
-    mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0) recordedChunks.push(e.data);
+    // Create recorder from stream
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = (event) => {
+      audioChunks.push(event.data);
     };
 
     mediaRecorder.onstop = () => {
-      const blob = new Blob(recordedChunks, { type: 'audio/webm' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `reader-recording_${getTimestamp()}.webm`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-
-      if (recordingStream) {
-        recordingStream.getTracks().forEach(t => t.stop());
-        recordingStream = null;
-      }
-      stopRecordingTimer();
+      saveRecordingAsWebM();
     };
 
-    // If user clicks browser's "Stop sharing" bar, clean up properly
-    audioTracks[0].onended = () => {
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        stopRecording();
-      }
-    };
-
-    mediaRecorder.start();
-    startRecordingTimer();
-    updateRecordButton(true);
-
+    return true;
   } catch (err) {
-    if (err.name !== 'NotAllowedError') {
-      alert("Recording failed: " + err.message);
-    }
-    console.error(err);
+    alert("❌ Audio access failed: " + err.message);
+    return false;
   }
+}
+
+async function startRecording() {
+  const recordBtn = document.getElementById("recordBtn");
+  const stopBtn = document.getElementById("stopRecordBtn");
+  const status = document.getElementById("recordingStatus");
+  const timer = document.getElementById("recordingTimer");
+
+  const ready = await initializeRecorder();
+  if (!ready) return;
+
+  mediaRecorder.start();
+  isRecording = true;
+  recordingStartTime = Date.now();
+
+  recordBtn.style.display = "none";
+  stopBtn.style.display = "inline-block";
+  status.style.display = "block";
+  timer.style.display = "block";
+  timer.textContent = "⏱️ 00:00";
+
+  // Update timer every second
+  recordingTimerInterval = setInterval(() => {
+    if (!isRecording) {
+      clearInterval(recordingTimerInterval);
+      return;
+    }
+    const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+    const mins = String(Math.floor(elapsed / 60)).padStart(2, "0");
+    const secs = String(elapsed % 60).padStart(2, "0");
+    timer.textContent = `⏱️ ${mins}:${secs}`;
+  }, 1000);
+
+  console.log("🎙️ Recording started");
 }
 
 function stopRecording() {
-  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-    mediaRecorder.stop();
-  }
-  updateRecordButton(false);
-}
+  if (!isRecording || !mediaRecorder) return;
 
-// ---------- TIMER ----------
-function startRecordingTimer() {
-  recordingStartTime = Date.now();
-  const timerEl = document.getElementById('recordTimer');
-  if (timerEl) timerEl.style.display = 'inline-block';
-  recordingTimerInterval = setInterval(updateTimerDisplay, 1000);
-  updateTimerDisplay();
-}
-
-function stopRecordingTimer() {
+  isRecording = false;
+  mediaRecorder.stop();
   clearInterval(recordingTimerInterval);
-  recordingTimerInterval = null;
-  const timerEl = document.getElementById('recordTimer');
-  if (timerEl) {
-    timerEl.style.display = 'none';
-    timerEl.textContent = '00:00';
-  }
+
+  document.getElementById("recordBtn").style.display = "inline-block";
+  document.getElementById("stopRecordBtn").style.display = "none";
+  document.getElementById("recordingStatus").style.display = "none";
+  document.getElementById("recordingTimer").style.display = "none";
+
+  console.log("⏹️ Recording stopped");
 }
 
-function updateTimerDisplay() {
-  if (!recordingStartTime) return;
-  const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
-  const h = Math.floor(elapsed / 3600);
-  const m = Math.floor((elapsed % 3600) / 60);
-  const s = elapsed % 60;
-  const pad = n => String(n).padStart(2, '0');
-  const text = h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
-  const timerEl = document.getElementById('recordTimer');
-  if (timerEl) timerEl.textContent = '🔴 ' + text;
+function saveRecordingAsWebM() {
+  if (!audioChunks.length) {
+    alert("No audio recorded.");
+    return;
+  }
+
+  const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+  const url = URL.createObjectURL(audioBlob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `recording_${getTimestamp()}.webm`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  const status = document.getElementById("recordingStatus");
+  status.textContent = "✅ Recording saved!";
+  status.style.background = "#27ae60";
+  setTimeout(() => {
+    status.style.display = "none";
+  }, 3000);
 }
 
-// ---------- BUTTON ----------
-function updateRecordButton(isRecording) {
-  const btn = document.getElementById('recordBtn');
-  if (!btn) return;
-  if (isRecording) {
-    btn.textContent = '⏹ Stop Recording';
-    btn.style.background = '#cc0000';
-    btn.style.color = '#fff';
-    btn.onclick = stopRecording;
-  } else {
-    btn.textContent = '🔴 Start Recording';
-    btn.style.background = '';
-    btn.style.color = '';
-    btn.onclick = startRecording;
-  }
-}
+
+
+
+
 
 
 // ===============================
@@ -944,3 +940,9 @@ document.getElementById("openFinder").addEventListener("click", () => {
 
 
 
+
+// ===============================
+// RECORDER BUTTON EVENTS
+// ===============================
+document.getElementById("recordBtn")?.addEventListener("click", startRecording);
+document.getElementById("stopRecordBtn")?.addEventListener("click", stopRecording);
