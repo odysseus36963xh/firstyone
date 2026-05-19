@@ -183,16 +183,85 @@ function speak(text, lang, rate) {
 // ===============================
 // UI HELPERS
 // ===============================
+// ===============================
+// UI HELPERS
+// ===============================
 function clearHighlight() {
   document.querySelectorAll(".reading").forEach(c => c.classList.remove("reading"));
 }
 
+window.currentMediaElement = null; // Global tracker for audio/video playback
+
 function stopReading() {
   isReading = false;
   speechSynthesis.cancel();
+  
+  // Stop custom audio/video if playing
+  if (window.currentMediaElement) {
+    window.currentMediaElement.pause();
+    window.currentMediaElement = null;
+  }
+  
+  // Hide the popup card
+  const popup = document.getElementById("mediaPopup");
+  if (popup) popup.classList.remove("show");
+  
   clearHighlight();
 }
 
+
+// ===============================
+// MEDIA PLAYER
+// ===============================
+function playCellMedia(cell) {
+  return new Promise((resolve) => {
+    const mediaUrl = cell.dataset.mediaUrl;
+    const mediaType = cell.dataset.mediaType;
+    const popup = document.getElementById("mediaPopup");
+
+    if (!popup || !mediaUrl) {
+      if (popup) popup.classList.remove("show");
+      return resolve("no-media"); 
+    }
+
+    // IF IMAGE: Show the card and instantly resolve so TTS reads the text
+    if (mediaType.startsWith("image")) {
+      popup.innerHTML = `<img src="${mediaUrl}">`;
+      popup.classList.add("show");
+      return resolve("image"); 
+    } 
+    
+    // IF AUDIO/VIDEO: Play the file, wait to resolve until it finishes
+    if (mediaType.startsWith("audio") || mediaType.startsWith("video")) {
+      let mediaElement = document.createElement(mediaType.startsWith("audio") ? "audio" : "video");
+      mediaElement.src = mediaUrl;
+      window.currentMediaElement = mediaElement;
+
+      if (mediaType.startsWith("video")) {
+        popup.innerHTML = "";
+        popup.appendChild(mediaElement);
+        popup.classList.add("show");
+      }
+
+      mediaElement.onended = () => {
+        window.currentMediaElement = null;
+        resolve("played-audio");
+      };
+      
+      // If error occurs, don't freeze the app, just move on
+      mediaElement.onerror = () => resolve("error"); 
+
+      mediaElement.play().catch(() => resolve("error"));
+    }
+  });
+}
+
+
+
+
+// ===============================
+// MAIN READING ENGINE
+// ===============================
 // ===============================
 // MAIN READING ENGINE
 // ===============================
@@ -227,26 +296,45 @@ async function startReading() {
     if (!isReading) return;
     for (let r of rowRange) {
       if (!isReading) return;
-      // table.rows[0] = header, table.rows[1] = selectors, table.rows[2+] = data
       const row = table.rows[r + 1];
       if (!row) continue;
 
       for (let rr = 0; rr < repeatRow; rr++) {
         for (let c of colRange) {
           if (!isReading) return;
-          const cell = row.cells[c + 1]; // +1 skips row number header
+          const cell = row.cells[c + 1];
           if (!cell) continue;
+          
           const text = cell.innerText || "";
-
           const selector = table.rows[1]?.cells[c + 1]?.querySelector("select");
           const lang = selector?.value || "Off";
+          const hasMedia = cell.dataset.mediaUrl !== undefined; // Check for media
 
-          if (lang === "Off" || !text.trim()) continue;
+          // Skip if language is Off, OR if there's no text AND no media attached
+          if (lang === "Off" || (!text.trim() && !hasMedia)) continue;
 
           for (let rc = 0; rc < repeatCell; rc++) {
             if (!isReading) return;
             cell.classList.add("reading");
-            await speak(text, lang, speed);
+
+            // 1. Play media (image popup or audio/video playback)
+            let mediaResult = await playCellMedia(cell);
+
+            if (!isReading) return; // Check again in case user clicked Stop during media
+
+            // 2. Read text via TTS (Only if it wasn't a custom audio/video recording)
+            if (mediaResult !== "played-audio") {
+              // Strip the emojis out so the TTS doesn't read them out loud
+              let cleanText = text.replace(/[🖼️🎵🎥]/g, "").trim(); 
+              if (cleanText) {
+                await speak(cleanText, lang, speed);
+              }
+            }
+
+            // 3. Clean up the popup card after it finishes the cell
+            const popup = document.getElementById("mediaPopup");
+            if (popup) popup.classList.remove("show");
+
             cell.classList.remove("reading");
           }
         }
