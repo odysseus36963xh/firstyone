@@ -46,19 +46,17 @@
   <button onclick="stopReading()">Stop</button>
   <button id="openFinder">Frequency Finder</button>
   
- <button id="recordBtn" onclick="startRecording()">🔴 Start Recording</button>
-<span id="recordTimer" style="
-  display:none;
-  margin-left:10px;
-  font-family:monospace;
-  font-size:16px;
-  font-weight:bold;
-  color:#cc0000;
-  background:#fff0f0;
-  padding:4px 10px;
-  border-radius:6px;
-  border:1px solid #cc0000;
-">00:00</span>
+<div style="display:flex; gap:10px; align-items:center; margin:10px 0;">
+  <button id="recordBtn" style="background:#e74c3c; display:none; padding:10px 16px; border:none; color:white; border-radius:8px; cursor:pointer; font-weight:bold;">🎙️ Start Recording</button>
+  <button id="stopRecordBtn" style="background:#c0392b; display:none; padding:10px 16px; border:none; color:white; border-radius:8px; cursor:pointer; font-weight:bold;">⏹️ Stop Recording</button>
+  <div id="recordingTimer" style="display:none; padding:8px 14px; background:#222; color:#e74c3c; border-radius:8px; font-weight:bold; font-size:16px; font-family:monospace;">
+    ⏱️ 00:00
+  </div>
+</div>
+
+<div id="recordingStatus" style="display:none; padding:10px; background:#f39c12; border-radius:8px; color:white; margin:10px 0; font-weight:bold;">
+  ⏺️ Recording in progress...
+</div>
 
   
 </header>
