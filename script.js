@@ -75,7 +75,7 @@ async function startRecording() {
   stopBtn.style.display = "inline-block";
   status.style.display = "block";
   timer.style.display = "block";
-  timer.textContent = "⏱️ 00:00";
+  timer.textContent = " 00:00";
 
   // Update timer every second
   recordingTimerInterval = setInterval(() => {
@@ -86,10 +86,10 @@ async function startRecording() {
     const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
     const mins = String(Math.floor(elapsed / 60)).padStart(2, "0");
     const secs = String(elapsed % 60).padStart(2, "0");
-    timer.textContent = `⏱️ ${mins}:${secs}`;
+    timer.textContent = ` ${mins}:${secs}`;
   }, 1000);
 
-  console.log("🎙️ Recording started");
+  console.log("Recording started");
 }
 
 function stopRecording() {
@@ -104,7 +104,7 @@ function stopRecording() {
   document.getElementById("recordingStatus").style.display = "none";
   document.getElementById("recordingTimer").style.display = "none";
 
-  console.log("⏹️ Recording stopped");
+  console.log("Recording stopped");
 }
 
 function saveRecordingAsWebM() {
