@@ -17,160 +17,87 @@ loadVoices();
 
 
 // ===============================
-// AUDIO RECORDING + MP3 EXPORT
+// AUDIO RECORDER (captures tab audio)
 // ===============================
 let mediaRecorder = null;
-let audioChunks = [];
-let audioContext = null;
-let audioDestination = null;
-
-async function initializeRecorder() {
-  try {
-    // Get microphone access
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    
-    // Create audio context for mixing speaker + mic
-    if (!audioContext) {
-      audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    }
-
-    // Create recorder for speaker output
-    mediaRecorder = new MediaRecorder(stream);
-    audioChunks = [];
-
-    mediaRecorder.ondataavailable = (event) => {
-      audioChunks.push(event.data);
-    };
-
-    mediaRecorder.onstop = async () => {
-      await saveRecordingAsMP3();
-    };
-
-    return true;
-  } catch (err) {
-    alert("❌ Microphone access denied: " + err.message);
-    return false;
-  }
-}
+let recordedChunks = [];
+let recordingStream = null;
 
 async function startRecording() {
-  const recordBtn = document.getElementById("recordBtn");
-  const stopBtn = document.getElementById("stopRecordBtn");
-  const status = document.getElementById("recordingStatus");
+  try {
+    // Ask user to share THIS tab with audio
+    recordingStream = await navigator.mediaDevices.getDisplayMedia({
+      video: true,   // required by browser, we'll discard it
+      audio: true
+    });
 
-  const ready = await initializeRecorder();
-  if (!ready) return;
+    // Verify audio track exists
+    const audioTracks = recordingStream.getAudioTracks();
+    if (audioTracks.length === 0) {
+      alert("❌ No audio captured! Make sure you checked 'Share tab audio' in the dialog.");
+      stopRecording();
+      return;
+    }
 
-  mediaRecorder.start();
-  recordBtn.style.display = "none";
-  stopBtn.style.display = "inline-block";
-  status.style.display = "block";
-  
-  console.log("🎙️ Recording started");
+    // Build audio-only stream (drop video)
+    const audioStream = new MediaStream(audioTracks);
+
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm' });
+
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) recordedChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `reader-recording_${getTimestamp()}.webm`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      // Stop all tracks (removes the "sharing" bar)
+      recordingStream.getTracks().forEach(t => t.stop());
+      recordingStream = null;
+    };
+
+    mediaRecorder.start();
+    updateRecordButton(true);
+    alert("🔴 Recording started!\n\nNow click 'Start Reader' to begin reading.\nWhen finished, click 'Stop Recording' to download the file.");
+
+  } catch (err) {
+    alert("Recording cancelled or failed: " + err.message);
+    console.error(err);
+  }
 }
 
 function stopRecording() {
-  if (!mediaRecorder || mediaRecorder.state === "inactive") return;
-  
-  mediaRecorder.stop();
-  
-  document.getElementById("recordBtn").style.display = "inline-block";
-  document.getElementById("stopRecordBtn").style.display = "none";
-  document.getElementById("recordingStatus").style.display = "none";
-  
-  console.log("⏹️ Recording stopped");
-}
-
-async function saveRecordingAsMP3() {
-  if (!audioChunks.length) {
-    alert("No audio recorded.");
-    return;
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
   }
-
-  // Create blob from audio chunks
-  const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
-
-  // Show processing message
-  const status = document.getElementById("recordingStatus");
-  status.textContent = "⏳ Converting to MP3...";
-  status.style.background = "#3498db";
-  status.style.display = "block";
-
-  try {
-    // Convert WebM to MP3 using FFmpeg WASM
-    const { FFmpeg, toBlobURL } = FFmpeg;
-    const ffmpeg = new FFmpeg.FFmpeg();
-
-    const coreURL = await toBlobURL(
-      `https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js`,
-      'text/javascript',
-    );
-    const wasmURL = await toBlobURL(
-      `https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/ffmpeg-core.wasm`,
-      'application/wasm',
-    );
-
-    ffmpeg.load({ coreURL, wasmURL });
-
-    if (!ffmpeg.isLoaded()) {
-      await ffmpeg.load();
-    }
-
-    // Write blob to FFmpeg filesystem
-    const inputFileName = "input.webm";
-    const outputFileName = "output.mp3";
-
-    const data = await audioBlob.arrayBuffer();
-    ffmpeg.FS("writeFile", inputFileName, new Uint8Array(data));
-
-    // Convert to MP3
-    await ffmpeg.run("-i", inputFileName, "-q:a", "5", outputFileName);
-
-    // Read result
-    const output = ffmpeg.FS("readFile", outputFileName);
-    const mp3Blob = new Blob([output.buffer], { type: "audio/mpeg" });
-
-    // Cleanup
-    ffmpeg.FS("unlink", inputFileName);
-    ffmpeg.FS("unlink", outputFileName);
-
-    // Download MP3
-    downloadMP3(mp3Blob);
-
-    status.textContent = "✅ MP3 saved!";
-    status.style.background = "#27ae60";
-    setTimeout(() => {
-      status.style.display = "none";
-    }, 2000);
-
-  } catch (err) {
-    console.error("FFmpeg error:", err);
-    alert("⚠️ MP3 conversion failed. Saving as WAV instead...");
-    downloadWAV(audioChunks);
+  if (recordingStream) {
+    recordingStream.getTracks().forEach(t => t.stop());
+    recordingStream = null;
   }
+  updateRecordButton(false);
 }
 
-function downloadMP3(blob) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `recording_${getTimestamp()}.mp3`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-function downloadWAV(chunks) {
-  const blob = new Blob(chunks, { type: "audio/webm" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `recording_${getTimestamp()}.webm`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+function updateRecordButton(isRecording) {
+  const btn = document.getElementById('recordBtn');
+  if (!btn) return;
+  if (isRecording) {
+    btn.textContent = '⏹ Stop Recording';
+    btn.style.background = '#cc0000';
+    btn.onclick = stopRecording;
+  } else {
+    btn.textContent = '🔴 Start Recording';
+    btn.style.background = '';
+    btn.onclick = startRecording;
+  }
 }
 
 
@@ -981,26 +908,3 @@ document.getElementById("openFinder").addEventListener("click", () => {
 
 
 
-
-
-
-// ===============================
-// RECORDER BUTTON EVENTS
-// ===============================
-document.getElementById("recordBtn")?.addEventListener("click", startRecording);
-document.getElementById("stopRecordBtn")?.addEventListener("click", stopRecording);
-
-// Show record button only when reader is running
-const originalStartReading = window.startReading;
-window.startReading = async function() {
-  document.getElementById("recordBtn").style.display = "inline-block";
-  return originalStartReading.call(this);
-};
-
-const originalStopReading = window.stopReading;
-window.stopReading = function() {
-  if (mediaRecorder && mediaRecorder.state === "recording") {
-    stopRecording();
-  }
-  return originalStopReading.call(this);
-};
