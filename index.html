@@ -25,19 +25,19 @@
     td:hover{background:#f8fbff;}
     td:focus{outline:none;border:2px solid #1a73e8;z-index:50;}
     .col-select{width:90%;border:none;background:transparent;font-size:11px;color:#5f6368;}
-    ./* Highlight for standard light columns */
-.reading {
-    background: #fff59d !important; 
-    color: #141414 !important;
+   /* 1. Bulletproof Yellow Highlight for Light Columns */
+td.reading, 
+tr.reading td {
+    background-color: #fff59d !important; 
+    color: #141414 !important; /* Keeps text dark and readable */
 }
 
-/* Highlight specifically for the new dark columns */
-td:nth-child(even).reading {
-    background: #1a5ec2 !important; /* The deep blue from your Frequency Finder buttons */
-    color: #ffffff !important;      /* White text */
+/* 2. Bulletproof Dark-Mode Highlight for Dark Columns */
+td:nth-child(even).reading, 
+tr.reading td:nth-child(even) {
+    background-color: #1a5ec2 !important; /* The deep blue from your Frequency Finder */
+    color: #ffffff !important; 
 }
-
-
     
     ::-webkit-scrollbar{width:10px;height:10px;}
     ::-webkit-scrollbar-track{background:#f1f1f1;}
