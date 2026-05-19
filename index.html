@@ -3,9 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  
-  <script async src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/ffmpeg.min.js"></script>
-  
+
   <title>Speech Table System</title>
   <style>
     *{box-sizing:border-box;}
@@ -48,11 +46,7 @@
   <button onclick="stopReading()">Stop</button>
   <button id="openFinder">Frequency Finder</button>
   
-  <button id="recordBtn" style="background:#e74c3c; display:none;">🎙️ Start Recording</button>
-<button id="stopRecordBtn" style="background:#27ae60; display:none;">⏹️ Stop & Save MP3</button>
-<div id="recordingStatus" style="display:none; padding:10px; background:#f39c12; border-radius:8px; color:white; margin:10px 0;">
-  ⏺️ Recording in progress...
-</div>
+  <button id="recordBtn" onclick="startRecording()">🔴 Start Recording</button>
   
 </header>
 
