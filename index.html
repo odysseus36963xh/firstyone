@@ -32,20 +32,35 @@
     ::-webkit-scrollbar-thumb:hover{background:#a8a8a8;}
 
    
-th:nth-child(even),
+/* 1. Make every other column match the Frequency Finder 'extract box' */
 td:nth-child(even) {
-    background-color: #000000;
-    color: #ffffff;
+    background-color: #141414; /* The textarea background color */
+    color: #e0e0e0;            /* Soft white text */
 }
 
+/* Make the header of the dark columns match the Frequency Finder table headers */
+th:nth-child(even) {
+    background-color: #1e1e1e; /* Slightly lighter dark gray for headers */
+    color: #5ea4ff;            /* The nice blue you used for headers, or change to #e0e0e0 */
+}
+
+/* 2. Match the exact hover state used in your Frequency Finder table */
 td:nth-child(even):hover {
-    background-color: #333333; 
-    color: #ffffff;
+    background-color: #1a2233; /* The dark blue hover tint */
+    color: #e0e0e0;
 }
 
+/* 3. Ensure the .col-select dropdowns in the dark columns are readable */
 th:nth-child(even) .col-select,
 td:nth-child(even) .col-select {
-    color: #ffffff;
+    color: #e0e0e0;
+}
+
+/* Fix option backgrounds in dropdowns so they aren't transparent over dark columns */
+th:nth-child(even) .col-select option,
+td:nth-child(even) .col-select option {
+    background-color: #141414;
+    color: #e0e0e0;
 }
 
   </style>
