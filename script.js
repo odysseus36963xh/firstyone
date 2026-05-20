@@ -298,19 +298,19 @@ function stopReading() {
   isReading = false;
   speechSynthesis.cancel();
   
-  // Stop custom audio/video if playing
-  if (window.currentMediaElement) {
-    window.currentMediaElement.pause();
-    window.currentMediaElement = null;
+  // Stop ALL media elements (plural!)
+  if (window.currentMediaElements) {
+    window.currentMediaElements.forEach(el => {
+        try { el.pause(); } catch(e) {}
+    });
+    window.currentMediaElements = null;
   }
   
-  // Hide the popup card
   const popup = document.getElementById("mediaPopup");
   if (popup) popup.classList.remove("show");
   
   clearHighlight();
 }
-
 
 // ===============================
 // MEDIA PLAYER
@@ -464,7 +464,7 @@ async function startReading() {
           const text = cell.innerText || "";
           const selector = table.rows[1]?.cells[c + 1]?.querySelector("select");
           const lang = selector?.value || "Off";
-          const hasMedia = cell.dataset.mediaUrl !== undefined; // Check for media
+          const hasMedia = cell.dataset.mediaUrls && JSON.parse(cell.dataset.mediaUrls).length > 0;
 
           // Skip if language is Off, OR if there's no text AND no media attached
           if (lang === "Off" || (!text.trim() && !hasMedia)) continue;
@@ -472,14 +472,13 @@ async function startReading() {
           for (let rc = 0; rc < repeatCell; rc++) {
             if (!isReading) return;
             cell.classList.add("reading");
+              // 1. Play media (image popup or audio/video playback)
+            const mediaResult = await playCellMedia(cell);
 
-            // 1. Play media (image popup or audio/video playback)
-            let mediaResult = await playCellMedia(cell);
+if (!isReading) return; // Check again in case user clicked Stop during media
 
-            if (!isReading) return; // Check again in case user clicked Stop during media
-
-            // 2. Read text via TTS (Only if it wasn't a custom audio/video recording)
-            if (mediaResult !== "played-audio") {
+// 2. Read text via TTS (Only if there was no audio played)
+if (!mediaResult.hasAudio) {
               // Strip the emojis out so the TTS doesn't read them out loud
               let cleanText = text.replace(/[🖼️🎵🎥]/g, "").trim(); 
               if (cleanText) {
