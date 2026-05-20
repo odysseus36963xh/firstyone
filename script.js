@@ -315,46 +315,100 @@ function stopReading() {
 // ===============================
 // MEDIA PLAYER
 // ===============================
+// ===============================
+// MEDIA PLAYER (MULTI-FILE + NO FREEZE)
+// ===============================
 function playCellMedia(cell) {
   return new Promise((resolve) => {
-    const mediaUrl = cell.dataset.mediaUrl;
-    const mediaType = cell.dataset.mediaType;
+    const mediaUrls = cell.dataset.mediaUrls ? JSON.parse(cell.dataset.mediaUrls) : [];
+    const mediaTypes = cell.dataset.mediaTypes ? JSON.parse(cell.dataset.mediaTypes) : [];
     const popup = document.getElementById("mediaPopup");
 
-    if (!popup || !mediaUrl) {
-      if (popup) popup.classList.remove("show");
-      return resolve("no-media"); 
-    }
-
-    // IF IMAGE: Show the card and instantly resolve so TTS reads the text
-    if (mediaType.startsWith("image")) {
-      popup.innerHTML = `<img src="${mediaUrl}">`;
-      popup.classList.add("show");
-      return resolve("image"); 
-    } 
-    
-    // IF AUDIO/VIDEO: Play the file, wait to resolve until it finishes
-    if (mediaType.startsWith("audio") || mediaType.startsWith("video")) {
-      let mediaElement = document.createElement(mediaType.startsWith("audio") ? "audio" : "video");
-      mediaElement.src = mediaUrl;
-      window.currentMediaElement = mediaElement;
-
-      if (mediaType.startsWith("video")) {
-        popup.innerHTML = "";
-        popup.appendChild(mediaElement);
-        popup.classList.add("show");
+    // Safety timeout (30 seconds max per cell)
+    const timeoutId = setTimeout(() => {
+      console.warn("Media playback timeout - moving on");
+      if (window.currentMediaElements) {
+        window.currentMediaElements.forEach(el => el.pause());
+        window.currentMediaElements = null;
       }
+      popup.classList.remove("show");
+      resolve({hasAudio: false, hasImage: false});
+    }, 30000);
 
-      mediaElement.onended = () => {
-        window.currentMediaElement = null;
-        resolve("played-audio");
-      };
-      
-      // If error occurs, don't freeze the app, just move on
-      mediaElement.onerror = () => resolve("error"); 
-
-      mediaElement.play().catch(() => resolve("error"));
+    if (!popup || mediaUrls.length === 0) {
+      clearTimeout(timeoutId);
+      return resolve({hasAudio: false, hasImage: false});
     }
+
+    // Separate media by type
+    const images = [];
+    const audios = [];
+    const videos = [];
+    
+    mediaTypes.forEach((type, i) => {
+        if (type.startsWith('image')) images.push(mediaUrls[i]);
+        else if (type.startsWith('audio')) audios.push(mediaUrls[i]);
+        else if (type.startsWith('video')) videos.push(mediaUrls[i]);
+    });
+
+    // Build popup with images/videos (visible)
+    let popupHTML = '';
+    images.forEach(url => popupHTML += `<img src="${url}" style="max-width:100%;margin:2px 0;">`);
+    videos.forEach(url => popupHTML += `<video src="${url}" controls style="max-width:100%;margin:2px 0;"></video>`);
+    
+    popup.innerHTML = popupHTML;
+    if (images.length > 0 || videos.length > 0) {
+        popup.classList.add("show");
+    }
+
+    // Handle audio playback (invisible, background)
+    const audioElements = audios.map(url => {
+        const audio = new Audio(url);
+        audio.style.cssText = "position:absolute;opacity:0;pointer-events:none;";
+        return audio;
+    });
+
+    // If no audio, resolve quickly
+    if (audioElements.length === 0) {
+        setTimeout(() => {
+            clearTimeout(timeoutId);
+            resolve({hasAudio: false, hasImage: images.length > 0});
+        }, 100);
+        return;
+    }
+
+    // Play audio and wait for completion
+    window.currentMediaElements = audioElements;
+    let audioCompleted = 0;
+    let hasError = false;
+
+    audioElements.forEach(audio => {
+        audio.onended = () => {
+            audioCompleted++;
+            if (audioCompleted === audioElements.length) complete();
+        };
+        
+        audio.onerror = () => {
+            hasError = true;
+            audioCompleted++;
+            if (audioCompleted === audioElements.length) complete();
+        };
+    });
+
+    function complete() {
+        clearTimeout(timeoutId);
+        popup.classList.remove("show");
+        window.currentMediaElements = null;
+        resolve({hasAudio: true, hasImage: images.length > 0});
+    }
+
+    // Start playing all audio files
+    audioElements.forEach(audio => {
+        audio.play().catch(err => {
+            console.error("Audio play failed:", err);
+            audio.onerror();
+        });
+    });
   });
 }
 
