@@ -16,6 +16,38 @@ speechSynthesis.onvoiceschanged = loadVoices;
 loadVoices();
 
 
+// ===============================
+// HELPER: Blob <-> Base64
+// ===============================
+// Converts Blob to Base64 string (for saving)
+function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+}
+
+// Converts Base64 string back to Blob (for loading)
+function base64ToBlob(dataUrl) {
+    const parts = dataUrl.split(';base64,');
+    const mimeType = parts[0].split(':')[1];
+    const rawBase64 = parts[1];
+    const byteCharacters = atob(rawBase64);
+    const byteArrays = [];
+    for (let offset = 0; offset < byteCharacters.length; offset += 1024) {
+        const slice = byteCharacters.slice(offset, offset + 1024);
+        const byteNumbers = new Array(slice.length);
+        for (let i = 0; i < slice.length; i++) {
+            byteNumbers[i] = slice.charCodeAt(i);
+        }
+        byteArrays.push(new Uint8Array(byteNumbers));
+    }
+    return new Blob(byteArrays, { type: mimeType });
+}
+
+
 
 
 
