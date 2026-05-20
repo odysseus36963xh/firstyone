@@ -557,18 +557,9 @@ if (!mediaResult.hasAudio) {
 // ===============================
 // EXPORT & SAVE (harmonised)
 // ===============================
-// ===============================
-// HELPER: Blob <-> Base64
-// ===============================
-// Converts Blob to Base64 string (for saving)
-function blobToBase64(blob) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-    });
-}
+
+
+
 
 function getTimestamp() {
   const d = new Date();
@@ -700,75 +691,102 @@ async function saveTable() { // <-- Now async
 // ===============================
 // UPLOAD TABLE (harmonised) - FIXED
 // ===============================
+// ===============================
+// UPLOAD TABLE (with Media)
+// ===============================
 function uploadTable() {
-  const input = document.createElement("input");
-  input.type = "file";
-  input.accept = ".json";
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
 
-  input.onchange = function () {
-    const file = input.files[0];
-    if (!file) return;
+    input.onchange = function () {
+        const file = input.files[0];
+        if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      try {
-        const data = JSON.parse(e.target.result);
+        const reader = new FileReader();
+        reader.onload = async function (e) { // <-- Now async
+            try {
+                const data = JSON.parse(e.target.result);
 
-        if (!data.cells || !data.languages) {
-          throw new Error("Missing 'cells' or 'languages'");
-        }
+                if (!data.cells || !data.languages) {
+                    throw new Error("Missing 'cells' or 'languages'");
+                }
 
-        const table = document.getElementById("sheet");
-        if (!table) throw new Error("Table not found");
+                const table = document.getElementById("sheet");
+                if (!table) throw new Error("Table not found");
 
-        // Remove all existing data rows (keep header + selector row)
-        while (table.rows.length > 2) {
-          table.deleteRow(2);
-        }
+                // Clear existing rows
+                while (table.rows.length > 2) {
+                    table.deleteRow(2);
+                }
 
-        // Restore column language selectors
-        const selectorRow = table.rows[1];
-        for (let c = 0; c < data.languages.length; c++) {
-          const cell = selectorRow.cells[c + 1];
-          const select = cell?.querySelector("select");
-          if (select) select.value = data.languages[c];
-        }
+                // Restore languages
+                const selectorRow = table.rows[1];
+                for (let c = 0; c < data.languages.length; c++) {
+                    const cell = selectorRow.cells[c + 1];
+                    const select = cell?.querySelector("select");
+                    if (select) select.value = data.languages[c];
+                }
 
-        // Rebuild data rows
-        data.cells.forEach((rowArray) => {
-          const newRow = table.insertRow();
-          const numberCell = newRow.insertCell();
-          numberCell.textContent = newRow.rowIndex - 1;
-          numberCell.className = "row-number";
+                // Rebuild cells and restore media
+                for (let r = 0; r < data.cells.length; r++) {
+                    const rowArray = data.cells[r];
+                    const newRow = table.insertRow();
+                    const numberCell = newRow.insertCell();
+                    numberCell.textContent = newRow.rowIndex - 1;
+                    numberCell.className = "row-number";
 
-          rowArray.forEach((text) => {
-            const td = newRow.insertCell();
-            td.textContent = text || "";
-            
-            // 👇👇👇 THIS IS THE FIX 👇👇👇
-            td.contentEditable = "true"; 
-            // 👆👆👆 ADD THIS LINE 👆👆👆
-          });
-        });
+                    for (let c = 0; c < rowArray.length; c++) {
+                        const td = newRow.insertCell();
+                        td.textContent = rowArray[c] || "";
+                        td.contentEditable = "true";
 
-        // Success notification
-        if (typeof flash === "function") {
-          flash("Table uploaded ✓");
-        } else {
-          alert("Table uploaded successfully.");
-        }
+                        // Restore media if exists
+                        const cellKey = `${r}-${c}`;
+                        if (data.media && data.media[cellKey]) {
+                            const mediaInfo = data.media[cellKey];
+                            const urls = [];
+                            
+                            // Convert Base64 back to blobs and URLs
+                            for (let i = 0; i < mediaInfo.urls.length; i++) {
+                                const base64 = mediaInfo.urls[i];
+                                const blob = base64ToBlob(base64);
+                                const url = URL.createObjectURL(blob);
+                                urls.push(url);
+                            }
 
-      } catch (err) {
-        alert("Invalid JSON file: " + (err.message || ""));
-      }
+                            td.dataset.mediaUrls = JSON.stringify(urls);
+                            td.dataset.mediaTypes = JSON.stringify(mediaInfo.types);
+
+                            // Restore emojis
+                            const emojiMap = {
+                                'image': '🖼️',
+                                'audio': '🎵',
+                                'video': '🎥'
+                            };
+                            const uniqueTypes = [...new Set(mediaInfo.types)];
+                            uniqueTypes.forEach(type => {
+                                const prefix = type.split('/')[0];
+                                const emoji = emojiMap[prefix];
+                                if (emoji && !td.innerHTML.includes(emoji)) {
+                                    td.appendChild(document.createTextNode(` ${emoji}`));
+                                }
+                            });
+                        }
+                    }
+                }
+
+                alert("✅ Table and media uploaded successfully!");
+
+            } catch (err) {
+                alert("Invalid JSON file: " + (err.message || ""));
+            }
+        };
+        reader.readAsText(file);
     };
-    reader.readAsText(file);
-  };
 
-  input.click();
+    input.click();
 }
-
-
 
 
 
