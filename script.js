@@ -557,47 +557,88 @@ if (!mediaResult.hasAudio) {
 // ===============================
 // EXPORT & SAVE (harmonised)
 // ===============================
+// ===============================
+// HELPER: Blob <-> Base64
+// ===============================
+// Converts Blob to Base64 string (for saving)
+function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+}
+
 function getTimestamp() {
   const d = new Date();
   const pad = n => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
 }
 
-function exportTableData() {
-  const table = document.getElementById("sheet");
-  if (!table) return null;
+// ===============================
+// EXPORT & SAVE (with Media)
+// ===============================
+async function exportTableData() { // <-- Now async
+    const table = document.getElementById("sheet");
+    if (!table) return null;
 
-  const dataRows = table.rows.length - 2;
-  const colCount = 26;
+    const dataRows = table.rows.length - 2;
+    const colCount = 26;
+    const cells = [];
+    const languages = [];
+    const media = {}; // NEW: Stores media data
 
-  const cells = [];           // 2D array of plain strings
-  const languages = [];       // column language values
-
-  // Column languages from the selector row (row 1)
-  const selectorRow = table.rows[1];
-  for (let c = 0; c < colCount; c++) {
-    const cell = selectorRow?.cells[c + 1];
-    const select = cell?.querySelector("select");
-    languages.push(select?.value || "Off");
-  }
-
-  // Data rows (starting at index 2)
-  for (let r = 2; r < table.rows.length; r++) {
-    const row = table.rows[r];
-    const rowData = [];
-    for (let c = 1; c <= colCount; c++) {
-      rowData.push(row.cells[c]?.innerText?.trim() || "");
+    // Get language settings
+    const selectorRow = table.rows[1];
+    for (let c = 0; c < colCount; c++) {
+        const cell = selectorRow?.cells[c + 1];
+        const select = cell?.querySelector("select");
+        languages.push(select?.value || "Off");
     }
-    cells.push(rowData);
-  }
 
-  return {
-    createdAt: new Date().toISOString(),
-    columns: colCount,
-    rows: dataRows,
-    cells,
-    languages
-  };
+    // Process cells and media
+    for (let r = 2; r < table.rows.length; r++) {
+        const row = table.rows[r];
+        const rowData = [];
+        for (let c = 1; c <= colCount; c++) {
+            const cell = row.cells[c];
+            const text = cell?.innerText?.trim() || "";
+            rowData.push(text);
+
+            // Save media if present
+            if (cell.dataset.mediaUrls && cell.dataset.mediaTypes) {
+                try {
+                    const urls = JSON.parse(cell.dataset.mediaUrls);
+                    const types = JSON.parse(cell.dataset.mediaTypes);
+                    if (urls.length > 0) {
+                        const cellKey = `${r-2}-${c-1}`; // Use 0-based indices
+                        media[cellKey] = { urls: [], types: types };
+                        
+                        // Convert each media file to Base64
+                        for (let i = 0; i < urls.length; i++) {
+                            const response = await fetch(urls[i]);
+                            const blob = await response.blob();
+                            const base64 = await blobToBase64(blob);
+                            media[cellKey].urls.push(base64);
+                        }
+                    }
+                } catch (err) {
+                    console.error("Media export failed for cell", r, c, err);
+                }
+            }
+        }
+        cells.push(rowData);
+    }
+
+    return {
+        createdAt: new Date().toISOString(),
+        columns: colCount,
+        rows: dataRows,
+        cells,
+        languages,
+        media // <-- NEW
+    };
 }
 
 function downloadJSON(filename, data) {
@@ -634,13 +675,23 @@ function openSaveDialog(defaultName, onConfirm) {
   };
 }
 
-function saveTable() {
-  const filename = `language-table_${getTimestamp()}.json`;
-  const data = exportTableData();
-  if (!data) return;
-  openSaveDialog(filename, (finalName) => {
-    downloadJSON(finalName.endsWith(".json") ? finalName : finalName + ".json", data);
-  });
+// ===============================
+// SAVE TABLE (with Media)
+// ===============================
+async function saveTable() { // <-- Now async
+    const filename = `language-table_${getTimestamp()}.json`;
+    const data = await exportTableData(); // <-- Await the async function
+    
+    if (!data) return;
+
+    // Warn if file is huge
+    const jsonString = JSON.stringify(data, null, 2);
+    const sizeMB = (new Blob([jsonString]).size / 1024 / 1024).toFixed(2);
+    if (sizeMB > 10) {
+        if (!confirm(`Warning: Save file is ${sizeMB}MB. Continue?`)) return;
+    }
+
+    downloadJSON(filename, data);
 }
 
 // ===============================
