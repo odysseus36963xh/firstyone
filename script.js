@@ -4,16 +4,19 @@
 let isReading = false;
 let voices = [];
 
-speechSynthesis.onvoiceschanged = () => {
-  voices = speechSynthesis.getVoices();
-};
-
 function loadVoices() {
   voices = speechSynthesis.getVoices() || [];
+  updateLanguageDropdowns();
 }
-voices = speechSynthesis.getVoices();
-speechSynthesis.onvoiceschanged = loadVoices;
-loadVoices();
+
+if ("speechSynthesis" in window) {
+  speechSynthesis.onvoiceschanged = loadVoices;
+
+  // Some browsers load voices late, so call a few times
+  loadVoices();
+  setTimeout(loadVoices, 250);
+  setTimeout(loadVoices, 1000);
+}
 
 
 // ===============================
@@ -176,6 +179,9 @@ function saveRecording() {
 
 
 
+
+
+
 // ===============================
 // UTIL: COLUMN + CELL PARSING
 // ===============================
@@ -193,15 +199,151 @@ function parseCell(ref) {
   return { col, row };
 }
 
+
+
+
+
+
 // ===============================
 // VOICE SELECTION
 // ===============================
-function getVoice(langCode) {
-  const map = { EN: "en", IT: "it", ES: "es", FR: "fr", DE: "de" };
-  const lang = map[langCode];
-  if (!lang) return null;
-  return voices.find(v => v.lang?.toLowerCase().startsWith(lang));
+// ===============================
+// VOICE SELECTION - ALL BROWSER LANGUAGES
+// ===============================
+
+const LEGACY_LANG_MAP = {
+  EN: "en",
+  IT: "it",
+  ES: "es",
+  FR: "fr",
+  DE: "de"
+};
+
+function normalizeLang(code) {
+  return code?.trim().replace("_", "-").toLowerCase();
 }
+
+function getVoice(langCode) {
+  if (!voices.length) {
+    voices = speechSynthesis.getVoices() || [];
+  }
+
+  const mappedCode = LEGACY_LANG_MAP[langCode] || langCode;
+  const wanted = normalizeLang(mappedCode);
+
+  if (!wanted || wanted === "off") return null;
+
+  // Exact match first, e.g. "en-US"
+  let voice = voices.find(v => normalizeLang(v.lang) === wanted);
+  if (voice) return voice;
+
+  // Base-language match, e.g. "en" matches "en-US" or "en-GB"
+  const baseLang = wanted.split("-")[0];
+
+  return voices.find(v => {
+    const voiceLang = normalizeLang(v.lang);
+    return voiceLang?.split("-")[0] === baseLang;
+  }) || null;
+}
+
+function getBrowserLanguages() {
+  const unique = new Map();
+
+  voices.forEach(v => {
+    if (!v.lang) return;
+
+    const key = normalizeLang(v.lang);
+    if (!unique.has(key)) {
+      unique.set(key, v.lang);
+    }
+  });
+
+  return [...unique.values()].sort((a, b) => a.localeCompare(b));
+}
+
+function getLanguageLabel(lang) {
+  try {
+    const parts = lang.split("-");
+    const languageCode = parts[0];
+    const regionCode = parts[1];
+
+    const languageNames = new Intl.DisplayNames([navigator.language || "en"], {
+      type: "language"
+    });
+
+    const regionNames = new Intl.DisplayNames([navigator.language || "en"], {
+      type: "region"
+    });
+
+    const languageName = languageNames.of(languageCode) || languageCode;
+    const regionName = regionCode ? regionNames.of(regionCode) : "";
+
+    return regionName
+      ? `${languageName} (${regionName}) — ${lang}`
+      : `${languageName} — ${lang}`;
+  } catch {
+    return lang;
+  }
+}
+
+function updateLanguageDropdowns() {
+  const table = document.getElementById("sheet");
+  if (!table) return;
+
+  const selectorRow = table.rows[1];
+  if (!selectorRow) return;
+
+  const langs = getBrowserLanguages();
+
+  // Do not wipe existing dropdowns before voices are loaded
+  if (!langs.length) return;
+
+  for (let c = 1; c < selectorRow.cells.length; c++) {
+    const select = selectorRow.cells[c]?.querySelector("select");
+    if (!select) continue;
+
+    const currentValue = select.value || "Off";
+
+    select.innerHTML = "";
+
+    const offOption = document.createElement("option");
+    offOption.value = "Off";
+    offOption.textContent = "Off";
+    select.appendChild(offOption);
+
+    langs.forEach(lang => {
+      const option = document.createElement("option");
+      option.value = lang;
+      option.textContent = getLanguageLabel(lang);
+      select.appendChild(option);
+    });
+
+    // Preserve current selection if possible
+    if (currentValue === "Off") {
+      select.value = "Off";
+      continue;
+    }
+
+    const mappedCurrent = LEGACY_LANG_MAP[currentValue] || currentValue;
+    const normalizedCurrent = normalizeLang(mappedCurrent);
+    const currentBase = normalizedCurrent?.split("-")[0];
+
+    const exactMatch = langs.find(l => normalizeLang(l) === normalizedCurrent);
+    const baseMatch = langs.find(l => normalizeLang(l).split("-")[0] === currentBase);
+
+    select.value = exactMatch || baseMatch || "Off";
+  }
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -319,15 +461,26 @@ fileInput.addEventListener("change", function(e) {
 function speak(text, lang, rate) {
   return new Promise(resolve => {
     if (!text || !text.trim()) return resolve();
+
     const utter = new SpeechSynthesisUtterance(text);
     const voice = getVoice(lang);
-    if (voice) utter.voice = voice;
+
+    if (voice) {
+      utter.voice = voice;
+      utter.lang = voice.lang;
+    } else if (lang && lang !== "Off") {
+      utter.lang = LEGACY_LANG_MAP[lang] || lang;
+    }
+
     utter.rate = rate || 1;
     utter.onend = resolve;
     utter.onerror = resolve;
+
     speechSynthesis.speak(utter);
   });
 }
+
+
 
 // ===============================
 // UI HELPERS
