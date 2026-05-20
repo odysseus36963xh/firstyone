@@ -1607,11 +1607,10 @@ document.getElementById("openTabler").addEventListener("click", function () {
       "color:#137333!important;font-weight:500;" +
       "border-color:#ceead6;" +
     "}" +
-    "table.st td.sel{" +
-      "background:#1a73e8!important;color:#fff!important;" +
-      "font-weight:600;z-index:3;" +
-    "}" +
-
+   "table.st td.sel{" +
+  "background:rgba(52,206,87,.3)!important;color:#34ce57!important;" +
+  "font-weight:700;box-shadow:inset 0 0 0 2px #34ce57;z-index:3;" +
+"}" +
     /* ── EMPTY STATE ── */
     ".es{" +
       "display:flex;flex-direction:column;align-items:center;" +
@@ -1938,19 +1937,20 @@ document.getElementById("openTabler").addEventListener("click", function () {
       "tb.innerHTML=h;" +
     "}" +
 
-    "function cc(el){" +
-      "var tk=el.dataset.t;if(!tk)return;" +
-      "var all=document.querySelectorAll('#st td[data-t]');" +
-      "for(var i=0;i<all.length;i++){" +
-        "all[i].classList.remove('sel','hl');" +
-      "}" +
-      "HLW={};HLW[tk]=true;SEL=el;" +
-      "el.classList.add('sel');" +
-      "var matches=document.querySelectorAll('#st td[data-t=\"'+tk+'\"]');" +
-      "for(var j=0;j<matches.length;j++){" +
-        "if(matches[j]!==el)matches[j].classList.add('hl');" +
-      "}" +
-    "}" +
+  "function cc(el){" +
+  "var tk=el.dataset.t;if(tk===undefined||tk==='')return;" +
+  "var all=document.querySelectorAll('#st td[data-t]');" +
+  "if(SEL===el){" +
+    "for(var i=0;i<all.length;i++)all[i].classList.remove('sel','hl');" +
+    "HLW={};SEL=null;return;" +
+  "}" +
+  "for(var i=0;i<all.length;i++)all[i].classList.remove('sel','hl');" +
+  "HLW={};HLW[tk]=true;SEL=el;" +
+  "el.classList.add('sel');" +
+  "for(var j=0;j<all.length;j++){" +
+    "if(all[j]!==el&&all[j].dataset.t===tk)all[j].classList.add('hl');" +
+  "}" +
+"}" +
 
     "function seekOut(){" +
       "var raw=document.getElementById('vocabIn').value.trim();" +
