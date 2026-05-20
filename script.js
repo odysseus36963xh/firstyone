@@ -3597,10 +3597,3 @@ document.getElementById("openTabler").addEventListener("click", function () {
 // ===============================
 document.getElementById("recordBtn")?.addEventListener("click", startRecording);
 document.getElementById("stopRecordBtn")?.addEventListener("click", stopRecording);
-
-
-// ===============================
-// RECORDER BUTTON EVENTS
-// ===============================
-document.getElementById("recordBtn")?.addEventListener("click", startRecording);
-document.getElementById("stopRecordBtn")?.addEventListener("click", stopRecording);
