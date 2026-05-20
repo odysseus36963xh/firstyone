@@ -16,8 +16,14 @@ speechSynthesis.onvoiceschanged = loadVoices;
 loadVoices();
 
 
+
+
+
+
+
+
 // ===============================
-// AUDIO RECORDING (Speaker Only - Static App)
+// AUDIO RECORDING (Force WebM + Recognize OGX)
 // ===============================
 let audioContext = null;
 let mediaRecorder = null;
@@ -28,7 +34,6 @@ let recordingTimerInterval = null;
 
 async function initializeRecorder() {
   try {
-    // Get system audio + mic access
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     
     if (!audioContext) {
@@ -39,8 +44,11 @@ async function initializeRecorder() {
       await audioContext.resume();
     }
 
-    // Create recorder from stream
-    mediaRecorder = new MediaRecorder(stream);
+    // FORCE WebM format - if not supported, fallback to whatever browser wants
+    const options = { mimeType: 'audio/webm;codecs=opus' };
+    const supported = MediaRecorder.isTypeSupported(options.mimeType);
+    
+    mediaRecorder = new MediaRecorder(stream, supported ? options : {});
     audioChunks = [];
 
     mediaRecorder.ondataavailable = (event) => {
@@ -48,7 +56,7 @@ async function initializeRecorder() {
     };
 
     mediaRecorder.onstop = () => {
-      saveRecordingAsWebM();
+      saveRecording();
     };
 
     return true;
@@ -77,7 +85,6 @@ async function startRecording() {
   timer.style.display = "block";
   timer.textContent = " 00:00";
 
-  // Update timer every second
   recordingTimerInterval = setInterval(() => {
     if (!isRecording) {
       clearInterval(recordingTimerInterval);
@@ -107,17 +114,21 @@ function stopRecording() {
   console.log("Recording stopped");
 }
 
-function saveRecordingAsWebM() {
+function saveRecording() {
   if (!audioChunks.length) {
     alert("No audio recorded.");
     return;
   }
 
-  const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+  // Use ACTUAL mime type from the recorder (might be audio/ogg on Firefox)
+  const actualMimeType = audioChunks[0].type || 'audio/webm';
+  const extension = actualMimeType.includes('ogg') ? 'ogg' : 'webm';
+  
+  const audioBlob = new Blob(audioChunks, { type: actualMimeType });
   const url = URL.createObjectURL(audioBlob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `recording_${getTimestamp()}.webm`;
+  a.download = `recording_${getTimestamp()}.${extension}`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -130,7 +141,6 @@ function saveRecordingAsWebM() {
     status.style.display = "none";
   }, 3000);
 }
-
 
 
 
@@ -252,7 +262,7 @@ fileInput.addEventListener("change", function(e) {
     
     // If MIME type is missing or unknown, use extension
     if (!emojiMap[typePrefix]) {
-        if (['mp3', 'wav', 'webm', 'ogg', 'm4a', 'aac', 'flac'].includes(ext)) {
+        if (['mp3', 'wav', 'webm', 'ogg', 'ogx', 'm4a', 'aac', 'flac'].includes(ext)) {
             typePrefix = 'audio';
         } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) {
             typePrefix = 'image';
