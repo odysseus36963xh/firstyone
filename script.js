@@ -557,7 +557,6 @@ if (!mediaResult.hasAudio) {
 
 
 
-
 function getTimestamp() {
   const d = new Date();
   const pad = n => String(n).padStart(2, "0");
@@ -664,24 +663,26 @@ function openSaveDialog(defaultName, onConfirm) {
 }
 
 // ===============================
-// SAVE TABLE (with Media)
+// SAVE TABLE (with Media + Custom Filename)
 // ===============================
-async function saveTable() { // <-- Now async
-    const filename = `language-table_${getTimestamp()}.json`;
-    const data = await exportTableData(); // <-- Await the async function
+async function saveTable() {
+    const defaultName = `language-table_${getTimestamp()}.json`;
     
-    if (!data) return;
+    // First, ask for filename
+    openSaveDialog(defaultName, async (finalName) => { // <-- Make callback async
+        const data = await exportTableData();
+        if (!data) return;
 
-    // Warn if file is huge
-    const jsonString = JSON.stringify(data, null, 2);
-    const sizeMB = (new Blob([jsonString]).size / 1024 / 1024).toFixed(2);
-    if (sizeMB > 10) {
-        if (!confirm(`Warning: Save file is ${sizeMB}MB. Continue?`)) return;
-    }
+        // Warn if file is huge
+        const jsonString = JSON.stringify(data, null, 2);
+        const sizeMB = (new Blob([jsonString]).size / 1024 / 1024).toFixed(2);
+        if (sizeMB > 10) {
+            if (!confirm(`Warning: Save file is ${sizeMB}MB. Continue?`)) return;
+        }
 
-    downloadJSON(filename, data);
+        downloadJSON(finalName.endsWith(".json") ? finalName : finalName + ".json", data);
+    });
 }
-
 // ===============================
 // UPLOAD TABLE (harmonised)
 // ===============================
