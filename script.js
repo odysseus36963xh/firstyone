@@ -1988,8 +1988,6 @@ tUpdateLangs();
   newTab.document.write(htmlContent);
   newTab.document.close();
 });
-```
-
 
 
 // ===============================
