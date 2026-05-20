@@ -171,9 +171,12 @@ function getVoice(langCode) {
 // PAPERCLIP & MEDIA ATTACHMENT
 // ===============================
 
-// 1. Inject the necessary HTML into the body dynamically
+// ===============================
+// PAPERCLIP & MEDIA ATTACHMENT (MULTI-FILE SUPPORT)
+// ===============================
+
 document.body.insertAdjacentHTML('beforeend', `
-  <input type="file" id="cellFileInput" accept="image/jpeg, audio/mp3, audio/mpeg, video/webm" style="display:none">
+  <input type="file" id="cellFileInput" accept="image/jpeg, image/jpg, image/png, image/gif, image/webp, audio/mp3, audio/mpeg, audio/webm, audio/wav, audio/ogg, video/webm, video/mp4" style="display:none">
   <button id="floatingClip" contenteditable="false" title="Attach Media">📎</button>
   <div id="mediaPopup"></div>
 `);
@@ -183,68 +186,83 @@ const fileInput = document.getElementById("cellFileInput");
 const sheetWrap = document.getElementById("sheetWrap");
 let activeCell = null;
 
-// 2. Show the floating paperclip when a cell gets clicked (focused)
+// Show paperclip when cell is focused
 document.getElementById("sheet").addEventListener("focusin", (e) => {
     if (e.target.tagName === "TD") {
         activeCell = e.target;
-        
-        // Calculate cell position and place the button in the top-right corner
         const rect = activeCell.getBoundingClientRect();
-        
         floatingClip.style.display = "block";
-        // Position it relative to the document
         floatingClip.style.top = (window.scrollY + rect.top + 4) + "px";
         floatingClip.style.left = (window.scrollX + rect.right - 28) + "px";
     }
 });
 
-// 3. Hide paperclip when scrolling so it doesn't float away from the cell
-sheetWrap.addEventListener("scroll", () => {
-    floatingClip.style.display = "none";
-});
-
-// Hide paperclip if user clicks completely outside the table
+// Hide paperclip on scroll/click outside
+sheetWrap.addEventListener("scroll", () => floatingClip.style.display = "none");
 document.addEventListener("mousedown", (e) => {
     if (e.target !== floatingClip && e.target.tagName !== "TD") {
         floatingClip.style.display = "none";
     }
 });
 
-// 4. When the paperclip is clicked, trigger the file upload
+// Trigger file upload
 floatingClip.addEventListener("mousedown", (e) => {
-    e.preventDefault(); // This stops the cell from losing focus when clicked!
+    e.preventDefault();
     if (activeCell) fileInput.click();
 });
 
-// 5. Handle the file attachment to the cell
+// Handle file attachment (APPENDS instead of replaces!)
 fileInput.addEventListener("change", function(e) {
     const file = e.target.files[0];
     if (!file || !activeCell) return;
 
-    // Create a temporary URL for the file
-    const fileUrl = URL.createObjectURL(file);
+    // Get existing attachments
+    let mediaUrls = [];
+    let mediaTypes = [];
     
-    // Store the URL and Type inside the cell's hidden dataset
-    activeCell.dataset.mediaUrl = fileUrl;
-    activeCell.dataset.mediaType = file.type;
+    if (activeCell.dataset.mediaUrls) {
+        try {
+            mediaUrls = JSON.parse(activeCell.dataset.mediaUrls);
+            mediaTypes = JSON.parse(activeCell.dataset.mediaTypes);
+        } catch(e) {
+            mediaUrls = [];
+            mediaTypes = [];
+        }
+    }
 
-    // Add a visual emoji so the user knows a file is attached
-    if (file.type.startsWith("image")) {
-        activeCell.innerHTML += " 🖼️";
-    } else if (file.type.startsWith("audio")) {
-        activeCell.innerHTML += " 🎵";
-    } else if (file.type.startsWith("video")) {
-        activeCell.innerHTML += " 🎥";
+    // Add new file
+    const fileUrl = URL.createObjectURL(file);
+    mediaUrls.push(fileUrl);
+    mediaTypes.push(file.type);
+
+    // Save arrays to dataset
+    activeCell.dataset.mediaUrls = JSON.stringify(mediaUrls);
+    activeCell.dataset.mediaTypes = JSON.stringify(mediaTypes);
+
+    // Append emoji (don't replace!)
+    const emojiMap = {
+        'image': '🖼️',
+        'audio': '🎵',
+        'video': '🎥'
+    };
+    
+    let typePrefix = file.type.split('/')[0];
+    // Fallback to file extension if MIME type is missing
+    if (!emojiMap[typePrefix] && file.name) {
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (['mp3', 'wav', 'webm', 'ogg', 'm4a', 'aac'].includes(ext)) typePrefix = 'audio';
+        else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) typePrefix = 'image';
+        else if (['mp4', 'webm', 'ogg', 'mov'].includes(ext)) typePrefix = 'video';
     }
     
-    // Clean up
+    if (emojiMap[typePrefix] && !activeCell.innerHTML.includes(emojiMap[typePrefix])) {
+        activeCell.appendChild(document.createTextNode(` ${emojiMap[typePrefix]}`));
+    }
+    
     this.value = ""; 
     floatingClip.style.display = "none"; 
-    
-    // Move cursor back to the end of the text so they can keep typing
     placeCaretAtEnd(activeCell); 
 });
-
 
 
 
