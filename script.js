@@ -1458,688 +1458,1033 @@ document.getElementById("openTabler").addEventListener("click", function () {
     return;
   }
 
-// ===============================
-// TABLER FUNCTION AND THE EVENTS
-// ===============================
-  w.document.write(
-    '<!DOCTYPE html><html lang="en"><head>' +
-    '<meta charset="UTF-8">' +
-    '<meta name="viewport" content="width=device-width,initial-scale=1.0">' +
-    "<title>Tabler</title>" +
-    "<style>" +
-    /* ── RESET ── */
-    "*{box-sizing:border-box;margin:0;padding:0}" +
+  var html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tabler</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    /* ══════════════════════════════════════
+       RESET
+       ══════════════════════════════════════ */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* ── BASE ── */
-    "html,body{" +
-      "width:100%;height:100%;" +
-      "background:#0e0e10;color:#e0e0e0;" +
-      "font-family:'Segoe UI','Helvetica Neue',sans-serif;" +
-      "overflow:hidden;" +
-    "}" +
+    /* ══════════════════════════════════════
+       BASE
+       ══════════════════════════════════════ */
+    html, body {
+      width: 100%; height: 100%;
+      font-family: 'Roboto', 'Google Sans', Arial, sans-serif;
+      background: #f8f9fa;
+      color: #202124;
+      overflow: hidden;
+    }
 
-    /* ── HEADER ── */
-    ".hdr{" +
-      "display:flex;align-items:stretch;gap:10px;" +
-      "padding:10px 16px;background:#141416;" +
-      "border-bottom:1px solid #2a2a2e;flex-wrap:wrap;" +
-    "}" +
-    ".hdr-brand{" +
-      "display:flex;flex-direction:column;align-items:center;" +
-      "justify-content:center;padding-right:14px;" +
-      "border-right:1px solid #2a2a2e;min-width:90px;" +
-    "}" +
-    ".hdr-brand h1{" +
-      "font-size:20px;font-weight:700;letter-spacing:3px;" +
-      "color:#34ce57;text-transform:uppercase;" +
-      "text-shadow:0 0 18px rgba(52,206,87,.25);" +
-    "}" +
-    ".hdr-brand .sub{" +
-      "font-size:9px;color:#666;letter-spacing:1px;margin-top:2px;" +
-    "}" +
+    /* ══════════════════════════════════════
+       TOOLBAR
+       ══════════════════════════════════════ */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      padding: 6px 16px;
+      background: #fff;
+      border-bottom: 1px solid #dadce0;
+      gap: 10px;
+      flex-wrap: wrap;
+      min-height: 54px;
+    }
 
-    /* ── NAV BUTTONS ── */
-    ".hdr-nav{" +
-      "display:flex;align-items:center;gap:6px;" +
-      "padding:0 10px;border-right:1px solid #2a2a2e;" +
-    "}" +
-    ".nbtn{" +
-      "background:#1a1a2e;border:1px solid #2a2a3e;color:#ccc;" +
-      "padding:7px 14px;border-radius:4px;font-size:11px;" +
-      "font-weight:600;letter-spacing:1px;text-transform:uppercase;" +
-      "cursor:pointer;transition:all .2s;white-space:nowrap;" +
-    "}" +
-    ".nbtn:hover{background:#2a2a3e;border-color:#444;}" +
-    ".nbtn.on{" +
-      "background:#34ce57;color:#111;border-color:#34ce57;" +
-      "box-shadow:0 0 10px rgba(52,206,87,.3);" +
-    "}" +
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-right: 14px;
+      border-right: 1px solid #dadce0;
+    }
+
+    .brand-icon {
+      width: 30px; height: 30px;
+      background: #34a853;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 15px;
+    }
+
+    .brand h1 {
+      font-size: 18px; font-weight: 500;
+      color: #202124; letter-spacing: -0.3px;
+    }
+
+    .brand .sub {
+      font-size: 10px; color: #5f6368; margin-top: -2px;
+    }
+
+    /* ── NAV TABS ── */
+    .nav-tabs {
+      display: flex; gap: 2px;
+    }
+
+    .ntab {
+      background: none; border: none;
+      border-bottom: 2px solid transparent;
+      padding: 8px 14px; font-size: 13px;
+      font-weight: 500; color: #5f6368;
+      cursor: pointer; font-family: inherit;
+      border-radius: 4px 4px 0 0;
+      transition: all 0.15s;
+    }
+
+    .ntab:hover { background: #f1f3f4; color: #202124; }
+
+    .ntab.on {
+      color: #1a73e8;
+      border-bottom-color: #1a73e8;
+      background: #e8f0fe;
+    }
 
     /* ── FIELD GROUPS ── */
-    ".hdr-fields{display:flex;gap:14px;flex:1;align-items:stretch;min-width:0;}" +
-    ".fg{display:flex;flex-direction:column;gap:5px;flex:1;min-width:200px;}" +
-    ".fg-label{" +
-      "font-size:9px;font-weight:700;letter-spacing:2px;" +
-      "text-transform:uppercase;color:#666;" +
-    "}" +
-    ".fg-row{display:flex;gap:6px;flex:1;align-items:stretch;}" +
-    ".fg-ta{" +
-      "flex:1;background:#1a1a2e;border:1px solid #2a2a3e;" +
-      "border-radius:4px;color:#e0e0e0;" +
-      "font-family:Consolas,'Fira Code',monospace;font-size:12px;" +
-      "padding:7px 9px;resize:none;outline:none;min-height:44px;" +
-      "transition:border-color .2s;" +
-    "}" +
-    ".fg-ta:focus{border-color:#34ce57;box-shadow:0 0 6px rgba(52,206,87,.2);}" +
-    ".fg-btn{" +
-      "background:#1a1a2e;border:1px solid #2a2a3e;color:#34ce57;" +
-      "padding:0 16px;border-radius:4px;font-size:10px;" +
-      "font-weight:700;letter-spacing:1.5px;text-transform:uppercase;" +
-      "cursor:pointer;transition:all .2s;white-space:nowrap;" +
-      "align-self:flex-end;" +
-    "}" +
-    ".fg-btn:hover{background:#34ce57;color:#111;box-shadow:0 0 12px rgba(52,206,87,.3);}" +
-    ".fg-btn.sk{color:#6ecfff;border-color:#1a3a5a;}" +
-    ".fg-btn.sk:hover{background:#6ecfff;color:#111;}" +
+    .fields {
+      display: flex; gap: 14px; flex: 1;
+      align-items: stretch; min-width: 0;
+    }
+
+    .field {
+      display: flex; flex-direction: column;
+      gap: 4px; flex: 1; min-width: 180px;
+    }
+
+    .field-label {
+      font-size: 10px; font-weight: 500;
+      text-transform: uppercase; letter-spacing: 0.8px;
+      color: #5f6368;
+    }
+
+    .field-row {
+      display: flex; gap: 5px; align-items: stretch;
+    }
+
+    .field-input {
+      flex: 1; background: #f8f9fa;
+      border: 1px solid #dadce0; border-radius: 4px;
+      color: #202124;
+      font-family: 'Roboto Mono', Consolas, monospace;
+      font-size: 11px; padding: 6px 8px;
+      resize: none; outline: none; min-height: 38px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .field-input:focus {
+      border-color: #1a73e8;
+      box-shadow: 0 0 0 2px rgba(26,115,232,0.15);
+      background: #fff;
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      background: #fff; border: 1px solid #dadce0;
+      border-radius: 4px; color: #1a73e8;
+      padding: 6px 14px; font-size: 12px;
+      font-weight: 500; cursor: pointer;
+      transition: all 0.15s; white-space: nowrap;
+      font-family: inherit;
+    }
+
+    .btn:hover { background: #e8f0fe; border-color: #c5d7f2; }
+    .btn:active { background: #d2e3fc; }
+
+    .btn-filled {
+      background: #1a73e8; border-color: #1a73e8; color: #fff;
+    }
+
+    .btn-filled:hover {
+      background: #1765cc;
+      box-shadow: 0 1px 3px rgba(26,115,232,0.3);
+    }
+
+    .btn-filled:active { background: #1558b0; }
+
+    .btn-green {
+      color: #34a853; border-color: #ceead6;
+    }
+
+    .btn-green:hover {
+      background: #e6f4ea; border-color: #a8dab5;
+    }
 
     /* ── ACTIONS ── */
-    ".hdr-acts{" +
-      "display:flex;align-items:center;gap:6px;" +
-      "padding-left:10px;border-left:1px solid #2a2a2e;" +
-    "}" +
+    .actions {
+      display: flex; align-items: center;
+      gap: 6px; padding-left: 10px;
+      border-left: 1px solid #dadce0;
+    }
 
-    /* ── UNFOUND BAR ── */
-    ".ubar{" +
-      "display:none;background:#1a1200;border-bottom:1px solid #3a2a00;" +
-      "padding:7px 16px;font-size:11px;color:#ffaa00;" +
-      "align-items:flex-start;gap:10px;" +
-    "}" +
-    ".ubar.v{display:flex;}" +
-    ".ubar strong{white-space:nowrap;flex-shrink:0;}" +
-    ".uw{display:flex;flex-wrap:wrap;gap:5px;}" +
-    ".uwi{" +
-      "background:rgba(255,170,0,.12);border:1px solid rgba(255,170,0,.25);" +
-      "padding:1px 7px;border-radius:3px;font-family:monospace;font-size:10px;" +
-    "}" +
+    /* ══════════════════════════════════════
+       UNFOUND BAR
+       ══════════════════════════════════════ */
+    .unfound-bar {
+      display: none; background: #fef7e0;
+      border-bottom: 1px solid #f9e3a0;
+      padding: 8px 16px; font-size: 12px;
+      color: #7c5800; align-items: flex-start;
+      gap: 10px;
+    }
 
-    /* ── SHEET CONTAINER ── */
-    ".sc{" +
-      "width:100%;height:calc(100vh - 112px);overflow:auto;" +
-      "background:#f5f5f5;" +
-    "}" +
-    ".sc.wu{height:calc(100vh - 140px);}" +
+    .unfound-bar.show { display: flex; }
 
-    /* ── SHEET TABLE ── */
-    "table.st{border-collapse:collapse;width:max-content;min-width:100%;}" +
-    "table.st tr{border-bottom:1px solid #e0e0e0;}" +
-    "table.st td{" +
-      "background:#ffffff;color:#111;" +
-      "padding:5px 11px;" +
-      "font-family:Consolas,'Fira Code',monospace;font-size:12.5px;" +
-      "border-right:1px solid #f0f0f0;" +
-      "cursor:pointer;transition:background .12s,box-shadow .12s;" +
-      "white-space:nowrap;user-select:none;min-width:36px;text-align:center;" +
-    "}" +
-    "table.st td:first-child{" +
-      "position:sticky;left:0;z-index:2;" +
-      "background:#f0f0f0;color:#999;font-size:10px;font-weight:600;" +
-      "min-width:40px;border-right:2px solid #ddd;" +
-    "}" +
-    "table.st td.hl{" +
-      "background:rgba(52,206,87,.16)!important;" +
-      "color:#0a7a2a!important;font-weight:700;" +
-      "box-shadow:inset 0 0 0 2px #34ce57;z-index:1;" +
-    "}" +
-    "table.st td.sel{" +
-      "background:#34ce57!important;color:#fff!important;" +
-      "font-weight:800;box-shadow:0 0 10px rgba(52,206,87,.5);z-index:3;" +
-    "}" +
+    .unfound-bar strong {
+      white-space: nowrap; flex-shrink: 0; font-weight: 500;
+    }
 
-    /* ── EMPTY STATE ── */
-    ".es{" +
-      "display:flex;flex-direction:column;align-items:center;" +
-      "justify-content:center;height:100%;color:#999;gap:10px;" +
-    "}" +
-    ".es .ic{font-size:44px;opacity:.25;}" +
-    ".es p{font-size:13px;letter-spacing:.5px;}" +
-    ".es .ht{font-size:10px;opacity:.4;}" +
+    .unfound-words {
+      display: flex; flex-wrap: wrap; gap: 5px;
+    }
 
-    /* ── POPUP ── */
-    ".po{" +
-      "display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);" +
-      "z-index:1000;align-items:center;justify-content:center;" +
-    "}" +
-    ".po.v{display:flex;}" +
-    ".pb{" +
-      "background:#1a1a1e;border:1px solid #2a2a2e;border-radius:10px;" +
-      "padding:24px 28px;min-width:320px;max-width:90vw;" +
-      "box-shadow:0 16px 50px rgba(0,0,0,.6);" +
-    "}" +
-    ".pb h3{" +
-      "font-size:13px;font-weight:700;letter-spacing:2px;" +
-      "text-transform:uppercase;color:#34ce57;margin-bottom:14px;" +
-    "}" +
-    ".pi{" +
-      "width:100%;background:#141416;border:1px solid #2a2a2e;" +
-      "border-radius:4px;color:#e0e0e0;font-family:Consolas,monospace;" +
-      "font-size:13px;padding:9px 12px;outline:none;margin-bottom:16px;" +
-    "}" +
-    ".pi:focus{border-color:#34ce57;}" +
-    ".pa{display:flex;gap:8px;justify-content:flex-end;}" +
-    ".pbtn{" +
-      "background:#1a1a2e;border:1px solid #2a2a3e;color:#ccc;" +
-      "padding:7px 18px;border-radius:4px;font-size:11px;" +
-      "font-weight:600;letter-spacing:1px;text-transform:uppercase;" +
-      "cursor:pointer;transition:all .2s;" +
-    "}" +
-    ".pbtn:hover{background:#2a2a3e;}" +
-    ".pbtn.ok{background:#34ce57;color:#111;border-color:#34ce57;}" +
-    ".pbtn.ok:hover{box-shadow:0 0 12px rgba(52,206,87,.3);}" +
-    ".pbtn.cn{color:#777;}" +
+    .unfound-word {
+      background: #fff3cd; border: 1px solid #f9e3a0;
+      padding: 2px 10px; border-radius: 12px;
+      font-family: 'Roboto Mono', Consolas, monospace;
+      font-size: 11px; color: #7c5800;
+    }
 
-    /* ── READER OVERLAY ── */
-    ".ro{" +
-      "display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);" +
-      "z-index:900;flex-direction:column;" +
-    "}" +
-    ".ro.v{display:flex;}" +
-    ".rhdr{" +
-      "display:flex;align-items:center;justify-content:space-between;" +
-      "padding:12px 20px;background:#141416;" +
-      "border-bottom:1px solid #2a2a2e;gap:12px;flex-wrap:wrap;" +
-    "}" +
-    ".rhdr h2{" +
-      "font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#34ce57;" +
-    "}" +
-    ".rctrls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}" +
-    ".rctrls label{font-size:10px;color:#888;letter-spacing:1px;text-transform:uppercase;}" +
-    ".rctrls select,.rctrls input[type=number]{" +
-      "background:#1a1a2e;border:1px solid #2a2a3e;color:#e0e0e0;" +
-      "border-radius:3px;padding:4px 7px;font-size:11px;outline:none;" +
-    "}" +
-    ".rctrls input[type=range]{" +
-      "width:80px;accent-color:#34ce57;" +
-    "}" +
-    ".rctrls input[type=number]{width:52px;}" +
-    ".rbtn{" +
-      "background:#1a1a2e;border:1px solid #2a2a3e;color:#34ce57;" +
-      "padding:6px 14px;border-radius:4px;font-size:11px;font-weight:700;" +
-      "letter-spacing:1px;text-transform:uppercase;cursor:pointer;" +
-      "transition:all .2s;" +
-    "}" +
-    ".rbtn:hover{background:#34ce57;color:#111;}" +
-    ".rbtn.stop{color:#e05555;border-color:#4a1a1a;}" +
-    ".rbtn.stop:hover{background:#e05555;color:#fff;}" +
-    ".rclose{" +
-      "background:0;border:1px solid #2a2a3e;color:#777;" +
-      "width:30px;height:30px;border-radius:50%;font-size:15px;" +
-      "cursor:pointer;transition:all .2s;display:flex;" +
-      "align-items:center;justify-content:center;" +
-    "}" +
-    ".rclose:hover{border-color:#e05555;color:#e05555;}" +
+    /* ══════════════════════════════════════
+       SHEET CONTAINER
+       ══════════════════════════════════════ */
+    .sheet-container {
+      width: 100%; height: calc(100vh - 54px);
+      overflow: auto; background: #fff;
+    }
+
+    .sheet-container.with-unfound {
+      height: calc(100vh - 92px);
+    }
+
+    /* ══════════════════════════════════════
+       TABLE (Sheets-style)
+       ══════════════════════════════════════ */
+    table.sheet {
+      border-collapse: collapse;
+      width: max-content; min-width: 100%;
+    }
+
+    table.sheet tr { border-bottom: 1px solid #e8eaed; }
+
+    table.sheet td {
+      background: #fff; color: #202124;
+      padding: 4px 10px;
+      font-family: 'Roboto', Arial, sans-serif;
+      font-size: 13px; border-right: 1px solid #e8eaed;
+      cursor: pointer; transition: background 0.1s;
+      white-space: nowrap; user-select: none;
+      min-width: 36px; text-align: center;
+    }
+
+    table.sheet td:first-child {
+      position: sticky; left: 0; z-index: 2;
+      background: #f8f9fa; color: #5f6368;
+      font-size: 11px; font-weight: 500;
+      min-width: 40px; border-right: 1px solid #dadce0;
+    }
+
+    table.sheet td.hl {
+      background: #e8f0fe !important;
+      color: #1a73e8 !important; font-weight: 500;
+    }
+
+    table.sheet td.sel {
+      background: #1a73e8 !important;
+      color: #fff !important; font-weight: 600;
+    }
+
+    /* ══════════════════════════════════════
+       EMPTY STATE
+       ══════════════════════════════════════ */
+    .empty-state {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      height: 100%; color: #80868b; gap: 10px;
+    }
+
+    .empty-state .icon {
+      font-size: 48px; opacity: 0.35; color: #dadce0;
+    }
+
+    .empty-state p { font-size: 14px; color: #5f6368; }
+    .empty-state strong { color: #1a73e8; }
+    .empty-state .hint { font-size: 11px; color: #9aa0a6; }
+
+    /* ══════════════════════════════════════
+       DIALOG
+       ══════════════════════════════════════ */
+    .dialog-backdrop {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.35); z-index: 1000;
+      align-items: center; justify-content: center;
+    }
+
+    .dialog-backdrop.show { display: flex; }
+
+    .dialog {
+      background: #fff; border-radius: 8px;
+      padding: 24px 28px; min-width: 360px; max-width: 90vw;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+      animation: dialogIn 0.2s ease;
+    }
+
+    .dialog h3 {
+      font-size: 16px; font-weight: 500;
+      color: #202124; margin-bottom: 16px;
+    }
+
+    .dialog-input {
+      width: 100%; background: #f8f9fa;
+      border: 1px solid #dadce0; border-radius: 4px;
+      color: #202124; font-family: 'Roboto', Arial, sans-serif;
+      font-size: 14px; padding: 10px 12px;
+      outline: none; margin-bottom: 20px;
+      transition: border-color 0.15s;
+    }
+
+    .dialog-input:focus {
+      border-color: #1a73e8;
+      box-shadow: 0 0 0 2px rgba(26,115,232,0.15);
+    }
+
+    .dialog-actions {
+      display: flex; gap: 8px; justify-content: flex-end;
+    }
+
+    .btn-text {
+      background: none; border: none;
+      color: #5f6368; padding: 8px 16px;
+      border-radius: 4px; font-size: 13px;
+      font-weight: 500; cursor: pointer; font-family: inherit;
+    }
+
+    .btn-text:hover { background: #f1f3f4; }
+
+    .btn-primary {
+      background: #1a73e8; border: none; color: #fff;
+      padding: 8px 20px; border-radius: 4px;
+      font-size: 13px; font-weight: 500;
+      cursor: pointer; font-family: inherit;
+      transition: background 0.15s;
+    }
+
+    .btn-primary:hover { background: #1765cc; }
+
+    /* ══════════════════════════════════════
+       READER OVERLAY
+       ══════════════════════════════════════ */
+    .reader-overlay {
+      display: none; position: fixed; inset: 0;
+      background: #fff; z-index: 900;
+      flex-direction: column;
+    }
+
+    .reader-overlay.show { display: flex; }
+
+    .reader-header {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px; background: #fff;
+      border-bottom: 1px solid #dadce0;
+      gap: 12px; flex-wrap: wrap;
+    }
+
+    .reader-header h2 {
+      font-size: 16px; font-weight: 500; color: #202124;
+    }
+
+    .reader-controls {
+      display: flex; align-items: center;
+      gap: 12px; flex-wrap: wrap;
+    }
+
+    .reader-controls label {
+      font-size: 11px; color: #5f6368;
+      font-weight: 500; text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .reader-controls select,
+    .reader-controls input[type="number"] {
+      background: #f8f9fa; border: 1px solid #dadce0;
+      color: #202124; border-radius: 4px;
+      padding: 6px 8px; font-size: 12px;
+      outline: none; font-family: inherit;
+    }
+
+    .reader-controls select:focus,
+    .reader-controls input[type="number"]:focus {
+      border-color: #1a73e8;
+    }
+
+    .reader-controls input[type="range"] {
+      width: 80px; accent-color: #1a73e8;
+    }
+
+    .reader-controls input[type="number"] { width: 52px; }
+
+    .reader-close {
+      background: none; border: none;
+      color: #5f6368; width: 36px; height: 36px;
+      border-radius: 50%; font-size: 18px;
+      cursor: pointer; transition: background 0.15s;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .reader-close:hover {
+      background: #f1f3f4; color: #202124;
+    }
 
     /* ── READER BODY ── */
-    ".rbody{flex:1;overflow-y:auto;padding:32px;display:flex;justify-content:center;}" +
-    ".rcont{" +
-      "max-width:680px;width:100%;color:#e0e0e0;" +
-      "font-family:Georgia,'Times New Roman',serif;" +
-      "font-size:18px;line-height:1.85;" +
-    "}" +
-    ".rsent{" +
-      "display:block;padding:5px 8px;margin-bottom:4px;" +
-      "border-radius:4px;cursor:pointer;transition:background .2s;" +
-      "border-bottom:1px solid rgba(255,255,255,.03);" +
-    "}" +
-    ".rsent:hover{background:rgba(52,206,87,.04);}" +
-    ".rsent.rs-reading{" +
-      "background:rgba(52,206,87,.1);border-left:3px solid #34ce57;" +
-    "}" +
-    ".rw{" +
-      "cursor:pointer;transition:color .12s,background .12s;" +
-      "border-radius:2px;padding:1px 2px;" +
-    "}" +
-    ".rw:hover{background:rgba(52,206,87,.12);color:#34ce57;}" +
-    ".rw.rhl{" +
-      "background:rgba(52,206,87,.16);color:#34ce57;" +
-      "font-weight:700;box-shadow:inset 0 -2px 0 #34ce57;" +
-    "}" +
-    ".rw.ractive{" +
-      "background:#34ce57;color:#fff;font-weight:800;" +
-      "box-shadow:0 0 8px rgba(52,206,87,.5);" +
-    "}" +
+    .reader-body {
+      flex: 1; overflow-y: auto; padding: 40px;
+      display: flex; justify-content: center;
+      background: #f8f9fa;
+    }
 
-    /* ── SCROLLBARS ── */
-    "::-webkit-scrollbar{width:8px;height:8px;}" +
-    "::-webkit-scrollbar-track{background:#f1f1f1;}" +
-    "::-webkit-scrollbar-thumb{background:#c1c1c1;border-radius:20px;}" +
-    "::-webkit-scrollbar-thumb:hover{background:#a8a8a8;}" +
-    ".rbody::-webkit-scrollbar-track{background:#1a1a1e;}" +
-    ".rbody::-webkit-scrollbar-thumb{background:#444;}" +
+    .reader-content {
+      max-width: 680px; width: 100%;
+      color: #202124;
+      font-family: 'Roboto', 'Georgia', serif;
+      font-size: 18px; line-height: 1.8;
+      background: #fff; padding: 40px 48px;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
 
-    /* ── ANIMATION ── */
-    "@keyframes fi{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}" +
-    ".fi{animation:fi .22s ease}" +
+    .reader-sentence {
+      display: block; padding: 6px 10px;
+      margin-bottom: 2px; border-radius: 4px;
+      cursor: pointer; transition: background 0.15s;
+    }
 
-    "</style></head><body>" +
+    .reader-sentence:hover { background: #f1f3f4; }
 
-    /* ═══════════════════════════════════════════
-       HEADER
-       ═══════════════════════════════════════════ */
-    '<div class="hdr">' +
+    .reader-sentence.reading {
+      background: #e8f0fe;
+      border-left: 3px solid #1a73e8;
+    }
 
-      '<div class="hdr-brand">' +
-        "<h1>Tabler</h1>" +
-        '<span class="sub">text study engine</span>' +
-      "</div>" +
+    .reader-word {
+      cursor: pointer;
+      transition: color 0.1s, background 0.1s;
+      border-radius: 2px; padding: 1px 2px;
+    }
 
-      '<div class="hdr-nav">' +
-        '<button class="nbtn on" id="btnTabler" onclick="switchMode(\'t\')">Tabler</button>' +
-        '<button class="nbtn" id="btnReader" onclick="switchMode(\'r\')">Reader</button>' +
-      "</div>" +
+    .reader-word:hover {
+      background: #e8f0fe; color: #1a73e8;
+    }
 
-      '<div class="hdr-fields">' +
+    .reader-word.highlighted {
+      background: #d2e3fc; color: #1a73e8; font-weight: 500;
+    }
 
-        '<div class="fg">' +
-          '<div class="fg-label">Base Text</div>' +
-          '<div class="fg-row">' +
-            '<textarea class="fg-ta" id="baseIn" placeholder="Paste a chapter, passage, or any text here\u2026"></textarea>' +
-            '<button class="fg-btn" onclick="uploadText()">Upload</button>' +
-          "</div>" +
-        "</div>" +
+    .reader-word.active {
+      background: #1a73e8; color: #fff;
+      font-weight: 600; border-radius: 3px;
+    }
 
-        '<div class="fg">' +
-          '<div class="fg-label">Vocabulary List</div>' +
-          '<div class="fg-row">' +
-            '<textarea class="fg-ta" id="vocabIn" placeholder="Paste words, one per line\u2026"></textarea>' +
-            '<button class="fg-btn sk" onclick="seekOut()">Seek Out</button>' +
-          "</div>" +
-        "</div>" +
+    /* ══════════════════════════════════════
+       SCROLLBARS
+       ══════════════════════════════════════ */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; }
+    ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 8px; }
+    ::-webkit-scrollbar-thumb:hover { background: #a0a0a0; }
 
-      "</div>" +
+    /* ══════════════════════════════════════
+       ANIMATION
+       ══════════════════════════════════════ */
+    @keyframes dialogIn {
+      from { opacity:0; transform:scale(0.96) translateY(8px); }
+      to   { opacity:1; transform:scale(1) translateY(0); }
+    }
+  </style>
+</head>
+<body>
 
-      '<div class="hdr-acts">' +
-        '<button class="nbtn" onclick="saveTbl()">Save</button>' +
-        '<button class="nbtn" onclick="loadTbl()">Load</button>' +
-        '<input type="file" id="fileIn" accept=".json" style="display:none">' +
-      "</div>" +
+  <!-- ═══ TOOLBAR ═══ -->
+  <div class="toolbar">
+    <div class="brand">
+      <div class="brand-icon">T</div>
+      <div>
+        <h1>Tabler</h1>
+        <span class="sub">text study engine</span>
+      </div>
+    </div>
 
-    "</div>" +
+    <div class="nav-tabs">
+      <button class="ntab on" id="btnTabler" onclick="switchMode('t')">Tabler</button>
+      <button class="ntab"    id="btnReader" onclick="switchMode('r')">Reader</button>
+    </div>
 
-    /* ═══════════════════════════════════════════
+    <div class="fields">
+      <div class="field">
+        <div class="field-label">Base Text</div>
+        <div class="field-row">
+          <textarea class="field-input" id="baseIn"
+            placeholder="Paste a chapter, passage, or any text here…"></textarea>
+          <button class="btn btn-filled" onclick="uploadText()">Upload</button>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label">Vocabulary List</div>
+        <div class="field-row">
+          <textarea class="field-input" id="vocabIn"
+            placeholder="Paste words, one per line…"></textarea>
+          <button class="btn btn-green" onclick="seekOut()">Seek Out</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" onclick="saveTbl()">Save</button>
+      <button class="btn" onclick="loadTbl()">Load</button>
+      <input type="file" id="fileIn" accept=".json" style="display:none">
+    </div>
+  </div>
+
+  <!-- ═══ UNFOUND BAR ═══ -->
+  <div class="unfound-bar" id="unfoundBar">
+    <strong>Not found:</strong>
+    <div class="unfound-words" id="unfoundWords"></div>
+  </div>
+
+  <!-- ═══ SHEET ═══ -->
+  <div class="sheet-container" id="sheetContainer">
+    <div class="empty-state" id="emptyState">
+      <div class="icon">⊞</div>
+      <p>Paste text and hit <strong>Upload</strong> to parse</p>
+      <span class="hint">Every sentence becomes a row · every token becomes a cell</span>
+    </div>
+    <table class="sheet" id="sheetTable" style="display:none"></table>
+  </div>
+
+  <!-- ═══ SAVE DIALOG ═══ -->
+  <div class="dialog-backdrop" id="saveDialog">
+    <div class="dialog">
+      <h3>Save Table</h3>
+      <input class="dialog-input" id="saveFilename"
+        type="text" placeholder="my-study-session">
+      <div class="dialog-actions">
+        <button class="btn-text" onclick="closeSave()">Cancel</button>
+        <button class="btn-primary" onclick="doSave()">Save File</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ READER OVERLAY ═══ -->
+  <div class="reader-overlay" id="readerOverlay">
+    <div class="reader-header">
+      <h2>Reader</h2>
+      <div class="reader-controls">
+        <label>Lang</label>
+        <select id="readerLang" onchange="updateReader()">
+          <option value="en-US">English</option>
+          <option value="ar-SA">Arabic</option>
+          <option value="he-IL">Hebrew</option>
+          <option value="zh-CN">Chinese</option>
+          <option value="fr-FR">French</option>
+          <option value="es-ES">Spanish</option>
+          <option value="de-DE">German</option>
+          <option value="it-IT">Italian</option>
+          <option value="ja-JP">Japanese</option>
+          <option value="ko-KR">Korean</option>
+          <option value="pt-BR">Portuguese</option>
+          <option value="ru-RU">Russian</option>
+          <option value="hi-IN">Hindi</option>
+          <option value="Off">Off</option>
+        </select>
+        <label>Speed</label>
+        <input type="range" id="readerSpeed" min="0.5" max="2"
+          step="0.1" value="1" oninput="updateReader()">
+        <span id="readerSpeedVal"
+          style="font-size:11px;color:#5f6368;min-width:28px">1.0</span>
+        <label>Start</label>
+        <input type="number" id="readerStart" min="1" value="1">
+        <label>End</label>
+        <input type="number" id="readerEnd" min="1" value="999">
+        <label>Repeat</label>
+        <input type="number" id="readerRepeat" min="1" max="10" value="1">
+        <button class="btn btn-filled" id="readerPlay"
+          onclick="readerPlay()">Play</button>
+        <button class="btn" style="color:#d93025;border-color:#f1c0c0"
+          onclick="readerStop()">Stop</button>
+      </div>
+      <button class="reader-close" onclick="closeReader()">✕</button>
+    </div>
+    <div class="reader-body">
+      <div class="reader-content" id="readerContent"></div>
+    </div>
+  </div>
+
+  <script>
+    /* ═══════════════════════════════════════════════
+       STATE
+       ═══════════════════════════════════════════════ */
+    var TABLE = [];
+    var HIGHLIGHTS = {};
+    var SELECTED = null;
+    var isReading = false;
+
+    /* ═══════════════════════════════════════════════
+       UTILITIES
+       ═══════════════════════════════════════════════ */
+    function normalize(text) {
+      return text.toLowerCase().replace(/[^a-z0-9']/g, '');
+    }
+
+    function escapeHtml(str) {
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function escapeAttr(str) {
+      return str.replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+    }
+
+    /* ═══════════════════════════════════════════════
+       TOKENIZER
+       ═══════════════════════════════════════════════ */
+    function tokenize(text) {
+      var raw = text.replace(/\\r\\n/g, '\\n').replace(/\\r/g, '\\n').trim();
+      var lines = raw.split(/\\n+/);
+      var sentences = [];
+
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (!line) continue;
+
+        var parts = line.split(/([.!?;:]+)\\s+/);
+        var buffer = '';
+
+        for (var j = 0; j < parts.length; j++) {
+          if (/^[.!?;:]+$/.test(parts[j])) {
+            buffer += parts[j];
+            if (buffer.trim().length > 0) sentences.push(buffer.trim());
+            buffer = '';
+          } else {
+            buffer += (buffer && parts[j] ? ' ' : '') + parts[j];
+          }
+        }
+
+        if (buffer.trim().length > 0) sentences.push(buffer.trim());
+      }
+
+      var result = [];
+      for (var k = 0; k < sentences.length; k++) {
+        var tokens = sentences[k].match(
+          /[\\w\\u00C0-\\u024F\\u0600-\\u06FF\\u0980-\\u09FF\\u3000-\\u9FFF\\uAC00-\\uD7AF]+|[^\\s]/g
+        ) || [];
+        if (tokens.length > 0) result.push(tokens);
+      }
+
+      return result;
+    }
+
+    /* ═══════════════════════════════════════════════
+       UPLOAD TEXT
+       ═══════════════════════════════════════════════ */
+    function uploadText() {
+      var raw = document.getElementById('baseIn').value.trim();
+      if (!raw) return;
+
+      TABLE = tokenize(raw);
+      HIGHLIGHTS = {};
+      hideUnfound();
+
+      var endInput = document.getElementById('readerEnd');
+      if (endInput) endInput.value = TABLE.length;
+
+      renderSheet();
+    }
+
+    /* ═══════════════════════════════════════════════
+       RENDER SHEET
+       ═══════════════════════════════════════════════ */
+    function renderSheet() {
+      var table = document.getElementById('sheetTable');
+      var empty = document.getElementById('emptyState');
+
+      if (TABLE.length === 0) {
+        table.style.display = 'none';
+        empty.style.display = 'flex';
+        return;
+      }
+
+      empty.style.display = 'none';
+      table.style.display = 'table';
+
+      var maxCols = 0;
+      for (var i = 0; i < TABLE.length; i++) {
+        if (TABLE[i].length > maxCols) maxCols = TABLE[i].length;
+      }
+
+      var html = '';
+      for (var row = 0; row < TABLE.length; row++) {
+        html += '<tr><td>' + (row + 1) + '</td>';
+
+        for (var col = 0; col < maxCols; col++) {
+          var val = col < TABLE[row].length ? TABLE[row][col] : '';
+          var nm  = col < TABLE[row].length ? normalize(TABLE[row][col]) : '';
+          var cls = (nm && HIGHLIGHTS[nm]) ? 'hl' : '';
+
+          html += '<td class="' + cls + '"'
+            + ' data-r="' + row + '"'
+            + ' data-c="' + col + '"'
+            + ' data-t="' + escapeAttr(nm) + '"'
+            + ' onclick="cellClick(this)">'
+            + escapeHtml(val) + '</td>';
+        }
+
+        html += '</tr>';
+      }
+
+      table.innerHTML = html;
+    }
+
+    /* ═══════════════════════════════════════════════
+       CELL CLICK
+       ═══════════════════════════════════════════════ */
+    function cellClick(el) {
+      var token = el.dataset.t;
+      if (!token) return;
+
+      var allCells = document.querySelectorAll('#sheetTable td[data-t]');
+      for (var i = 0; i < allCells.length; i++) {
+        allCells[i].classList.remove('sel', 'hl');
+      }
+
+      HIGHLIGHTS = {};
+      HIGHLIGHTS[token] = true;
+      SELECTED = el;
+      el.classList.add('sel');
+
+      var matches = document.querySelectorAll(
+        '#sheetTable td[data-t="' + token + '"]'
+      );
+      for (var j = 0; j < matches.length; j++) {
+        if (matches[j] !== el) matches[j].classList.add('hl');
+      }
+    }
+
+    /* ═══════════════════════════════════════════════
+       SEEK OUT
+       ═══════════════════════════════════════════════ */
+    function seekOut() {
+      var raw = document.getElementById('vocabIn').value.trim();
+      if (!raw || TABLE.length === 0) return;
+
+      var words = raw.split(/[\\n,]+/);
+      var cleanWords = [];
+      for (var i = 0; i < words.length; i++) {
+        var w = words[i].trim();
+        if (w) cleanWords.push(w);
+      }
+
+      var normList = [];
+      for (var i = 0; i < cleanWords.length; i++) {
+        normList.push(normalize(cleanWords[i]));
+      }
+
+      var allTokens = {};
+      for (var r = 0; r < TABLE.length; r++) {
+        for (var c = 0; c < TABLE[r].length; c++) {
+          var n = normalize(TABLE[r][c]);
+          if (n) allTokens[n] = true;
+        }
+      }
+
+      HIGHLIGHTS = {};
+      var notFound = [];
+      for (var i = 0; i < normList.length; i++) {
+        if (allTokens[normList[i]]) HIGHLIGHTS[normList[i]] = true;
+        else notFound.push(cleanWords[i]);
+      }
+
+      renderSheet();
+      if (notFound.length > 0) showUnfound(notFound);
+      else hideUnfound();
+    }
+
+    /* ═══════════════════════════════════════════════
        UNFOUND BAR
-       ═══════════════════════════════════════════ */
-    '<div class="ubar" id="ubar">' +
-      "<strong>Not found:</strong>" +
-      '<div class="uw" id="uwc"></div>' +
-    "</div>" +
+       ═══════════════════════════════════════════════ */
+    function showUnfound(words) {
+      var container = document.getElementById('unfoundWords');
+      var html = '';
+      for (var i = 0; i < words.length; i++) {
+        html += '<span class="unfound-word">' + escapeHtml(words[i]) + '</span>';
+      }
+      container.innerHTML = html;
+      document.getElementById('unfoundBar').classList.add('show');
+      document.getElementById('sheetContainer').classList.add('with-unfound');
+    }
 
-    /* ═══════════════════════════════════════════
-       SHEET
-       ═══════════════════════════════════════════ */
-    '<div class="sc" id="sc">' +
-      '<div class="es" id="es">' +
-        '<div class="ic">⊞</div>' +
-        "<p>Paste text and hit <strong style=\"color:#34ce57\">Upload</strong> to parse</p>" +
-        '<span class="ht">Every sentence becomes a row &middot; every token becomes a cell</span>' +
-      "</div>" +
-      '<table class="st" id="st" style="display:none"></table>' +
-    "</div>" +
+    function hideUnfound() {
+      document.getElementById('unfoundBar').classList.remove('show');
+      document.getElementById('sheetContainer').classList.remove('with-unfound');
+    }
 
-    /* ═══════════════════════════════════════════
-       SAVE POPUP
-       ═══════════════════════════════════════════ */
-    '<div class="po" id="spop">' +
-      '<div class="pb fi">' +
-        "<h3>Save Table</h3>" +
-        '<input class="pi" id="sfn" type="text" placeholder="my-study-session">' +
-        '<div class="pa">' +
-          '<button class="pbtn cn" onclick="closePop()">Cancel</button>' +
-          '<button class="pbtn ok" onclick="doSave()">Save File</button>' +
-        "</div>" +
-      "</div>" +
-    "</div>" +
+    /* ═══════════════════════════════════════════════
+       SAVE / LOAD
+       ═══════════════════════════════════════════════ */
+    function saveTbl() {
+      if (TABLE.length === 0) return;
+      var date = new Date().toISOString().slice(0, 10);
+      document.getElementById('saveFilename').value = 'study-' + date;
+      document.getElementById('saveDialog').classList.add('show');
+      document.getElementById('saveFilename').focus();
+      document.getElementById('saveFilename').select();
+    }
 
-    /* ═══════════════════════════════════════════
-       READER OVERLAY
-       ═══════════════════════════════════════════ */
-    '<div class="ro" id="rov">' +
-      '<div class="rhdr">' +
-        "<h2>Reader</h2>" +
-        '<div class="rctrls">' +
-          "<label>Lang</label>" +
-          '<select id="rLang" onchange="updRdr()">' +
-            '<option value="en-US">English</option>' +
-            '<option value="ar-SA">Arabic</option>' +
-            '<option value="he-IL">Hebrew</option>' +
-            '<option value="zh-CN">Chinese</option>' +
-            '<option value="fr-FR">French</option>' +
-            '<option value="es-ES">Spanish</option>' +
-            '<option value="de-DE">German</option>' +
-            '<option value="it-IT">Italian</option>' +
-            '<option value="ja-JP">Japanese</option>' +
-            '<option value="ko-KR">Korean</option>' +
-            '<option value="pt-BR">Portuguese</option>' +
-            '<option value="ru-RU">Russian</option>' +
-            '<option value="hi-IN">Hindi</option>' +
-            '<option value="Off">Off</option>' +
-          "</select>" +
-          "<label>Speed</label>" +
-          '<input type="range" id="rSpd" min="0.5" max="2" step="0.1" value="1" oninput="updRdr()">' +
-          '<span id="rSpdV" style="font-size:10px;color:#888;min-width:28px">1.0</span>' +
-          "<label>Start</label>" +
-          '<input type="number" id="rStart" min="1" value="1" style="width:48px">' +
-          "<label>End</label>" +
-          '<input type="number" id="rEnd" min="1" value="999" style="width:48px">' +
-          "<label>Repeat</label>" +
-          '<input type="number" id="rRpt" min="1" max="10" value="1" style="width:42px">' +
-          '<button class="rbtn" id="rPlay" onclick="rPlay()">Play</button>' +
-          '<button class="rbtn stop" id="rStop" onclick="rStop()">Stop</button>' +
-        "</div>" +
-        '<button class="rclose" onclick="closeRdr()">✕</button>' +
-      "</div>" +
-      '<div class="rbody">' +
-        '<div class="rcont" id="rcont"></div>' +
-      "</div>" +
-    "</div>" +
+    function closeSave() {
+      document.getElementById('saveDialog').classList.remove('show');
+    }
 
-    /* ═══════════════════════════════════════════
-       JAVASCRIPT
-       ═══════════════════════════════════════════ */
-    "<script>" +
+    function doSave() {
+      var name = document.getElementById('saveFilename').value.trim() || 'table';
+      name = name.replace(/[^a-zA-Z0-9_-]/g, '_');
 
-    /* ── STATE ── */
-    "var TBL=[];var HLW={};var SEL=null;var isR=false;" +
+      var payload = {
+        v: 1,
+        ts: new Date().toISOString(),
+        name: name,
+        tbl: TABLE,
+        hl: Object.keys(HIGHLIGHTS),
+        txt: document.getElementById('baseIn').value
+      };
 
-    /* ── NORMALIZE ── */
-    "function nt(t){return t.toLowerCase().replace(/[^a-z0-9']/g,'');}" +
-    "function eh(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}" +
-    "function ea(s){return s.replace(/\"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}" +
+      var blob = new Blob(
+        [JSON.stringify(payload, null, 2)],
+        { type: 'application/json' }
+      );
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = name + '.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      closeSave();
+    }
 
-    /* ── TOKENIZER ── */
-    "function tokenize(text){" +
-      "var raw=text.replace(/\\r\\n/g,'\\n').replace(/\\r/g,'\\n').trim();" +
-      "var lines=raw.split(/\\n+/);" +
-      "var sents=[];" +
-      "for(var i=0;i<lines.length;i++){" +
-        "var ln=lines[i].trim();if(!ln)continue;" +
-        "var parts=ln.split(/([.!?;:]+)\\s+/);" +
-        "var buf='';" +
-        "for(var j=0;j<parts.length;j++){" +
-          "if(/^[.!?;:]+$/.test(parts[j])){" +
-            "buf+=parts[j];" +
-            "if(buf.trim().length>0)sents.push(buf.trim());" +
-            "buf='';" +
-          "}else{" +
-            "buf+=(buf&&parts[j]?' ':'')+parts[j];" +
-          "}" +
-        "}" +
-        "if(buf.trim().length>0)sents.push(buf.trim());" +
-      "}" +
-      "var result=[];" +
-      "for(var k=0;k<sents.length;k++){" +
-        "var tk=sents[k].match(/[\\w\\u00C0-\\u024F\\u0600-\\u06FF\\u0980-\\u09FF\\u3000-\\u9FFF\\uAC00-\\uD7AF]+|[^\\s]/g)||[];" +
-        "if(tk.length>0)result.push(tk);" +
-      "}" +
-      "return result;" +
-    "}" +
+    function loadTbl() {
+      document.getElementById('fileIn').click();
+    }
 
-    /* ── UPLOAD TEXT ── */
-    "function uploadText(){" +
-      "var raw=document.getElementById('baseIn').value.trim();" +
-      "if(!raw)return;" +
-      "TBL=tokenize(raw);" +
-      "HLW={};hideUF();" +
-      "var re=document.getElementById('rEnd');" +
-      "if(re)re.value=TBL.length;" +
-      "render();" +
-    "}" +
+    document.getElementById('fileIn').addEventListener('change', function (ev) {
+      var file = ev.target.files[0];
+      if (!file) return;
 
-    /* ── RENDER SHEET ── */
-    "function render(){" +
-      "var tb=document.getElementById('st');" +
-      "var es=document.getElementById('es');" +
-      "if(TBL.length===0){tb.style.display='none';es.style.display='flex';return;}" +
-      "es.style.display='none';tb.style.display='table';" +
-      "var mx=0;for(var i=0;i<TBL.length;i++)if(TBL[i].length>mx)mx=TBL[i].length;" +
-      "var h='';" +
-      "for(var r=0;r<TBL.length;r++){" +
-        "h+='<tr>';" +
-        "h+='<td>'+(r+1)+'</td>';" +
-        "for(var c=0;c<mx;c++){" +
-          "var v=c<TBL[r].length?TBL[r][c]:'';" +
-          "var nm=c<TBL[r].length?nt(TBL[r][c]):'';" +
-          "var isH=nm&&HLW[nm];" +
-          "h+='<td class=\"'+(isH?'hl':'')+'\" data-r=\"'+r+'\" data-c=\"'+c+'\" data-t=\"'+ea(nm)+'\" onclick=\"cc(this)\">'+eh(v)+'</td>';" +
-        "}" +
-        "h+='</tr>';" +
-      "}" +
-      "tb.innerHTML=h;" +
-    "}" +
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          var data = JSON.parse(e.target.result);
+          if (data.tbl && data.tbl.length) {
+            TABLE = data.tbl;
+            HIGHLIGHTS = {};
+            if (data.hl) {
+              for (var i = 0; i < data.hl.length; i++) HIGHLIGHTS[data.hl[i]] = true;
+            }
+            if (data.txt) document.getElementById('baseIn').value = data.txt;
+            hideUnfound();
+            renderSheet();
+            var re = document.getElementById('readerEnd');
+            if (re) re.value = TABLE.length;
+          }
+        } catch (err) {
+          alert('Invalid table file.');
+        }
+      };
+      reader.readAsText(file);
+      ev.target.value = '';
+    });
 
-    /* ── CELL CLICK ── */
-    "function cc(el){" +
-      "var tk=el.dataset.t;if(!tk)return;" +
-      "var all=document.querySelectorAll('#st td[data-t]');" +
-      "for(var i=0;i<all.length;i++){" +
-        "all[i].classList.remove('sel','hl');" +
-      "}" +
-      "HLW={};HLW[tk]=true;SEL=el;" +
-      "el.classList.add('sel');" +
-      "var matches=document.querySelectorAll('#st td[data-t=\"'+tk+'\"]');" +
-      "for(var j=0;j<matches.length;j++){" +
-        "if(matches[j]!==el)matches[j].classList.add('hl');" +
-      "}" +
-    "}" +
+    /* ═══════════════════════════════════════════════
+       MODE SWITCH
+       ═══════════════════════════════════════════════ */
+    function switchMode(mode) {
+      document.getElementById('btnTabler').classList.remove('on');
+      document.getElementById('btnReader').classList.remove('on');
 
-    /* ── SEEK OUT ── */
-    "function seekOut(){" +
-      "var raw=document.getElementById('vocabIn').value.trim();" +
-      "if(!raw||TBL.length===0)return;" +
-      "var words=raw.split(/[\\n,]+/);" +
-      "var clean=[];" +
-      "for(var i=0;i<words.length;i++){var w=words[i].trim();if(w)clean.push(w);}" +
-      "var normList=[];" +
-      "for(var i=0;i<clean.length;i++)normList.push(nt(clean[i]));" +
-      "var allTk={};" +
-      "for(var r=0;r<TBL.length;r++){" +
-        "for(var c=0;c<TBL[r].length;c++){" +
-          "var n=nt(TBL[r][c]);if(n)allTk[n]=true;" +
-        "}" +
-      "}" +
-      "HLW={};var nf=[];" +
-      "for(var i=0;i<normList.length;i++){" +
-        "if(allTk[normList[i]]){HLW[normList[i]]=true;}" +
-        "else{nf.push(clean[i]);}" +
-      "}" +
-      "render();" +
-      "if(nf.length>0)showUF(nf);else hideUF();" +
-    "}" +
+      if (mode === 'r') {
+        document.getElementById('btnReader').classList.add('on');
+        openReader();
+      } else {
+        document.getElementById('btnTabler').classList.add('on');
+        closeReader();
+      }
+    }
 
-    /* ── UNFOUND BAR ── */
-    "function showUF(words){" +
-      "var bar=document.getElementById('ubar');" +
-      "var wc=document.getElementById('uwc');" +
-      "var h='';" +
-      "for(var i=0;i<words.length;i++)h+='<span class=\"uwi\">'+eh(words[i])+'</span>';" +
-      "wc.innerHTML=h;" +
-      "bar.classList.add('v');" +
-      "document.getElementById('sc').classList.add('wu');" +
-    "}" +
-    "function hideUF(){" +
-      "document.getElementById('ubar').classList.remove('v');" +
-      "document.getElementById('sc').classList.remove('wu');" +
-    "}" +
+    /* ═══════════════════════════════════════════════
+       READER
+       ═══════════════════════════════════════════════ */
+    function openReader() {
+      if (TABLE.length === 0) return;
+      buildReaderContent();
+      document.getElementById('readerOverlay').classList.add('show');
+      document.getElementById('readerEnd').value = TABLE.length;
+    }
 
-    /* ── SAVE ── */
-    "function saveTbl(){" +
-      "if(TBL.length===0)return;" +
-      "document.getElementById('sfn').value='study-'+new Date().toISOString().slice(0,10);" +
-      "document.getElementById('spop').classList.add('v');" +
-      "document.getElementById('sfn').focus();" +
-      "document.getElementById('sfn').select();" +
-    "}" +
-    "function closePop(){document.getElementById('spop').classList.remove('v');}" +
-    "function doSave(){" +
-      "var nm=document.getElementById('sfn').value.trim()||'table';" +
-      "nm=nm.replace(/[^a-zA-Z0-9_-]/g,'_');" +
-      "var p={v:1,ts:new Date().toISOString(),name:nm,tbl:TBL,hl:Object.keys(HLW),txt:document.getElementById('baseIn').value};" +
-      "var blob=new Blob([JSON.stringify(p,null,2)],{type:'application/json'});" +
-      "var url=URL.createObjectURL(blob);" +
-      "var a=document.createElement('a');a.href=url;a.download=nm+'.json';a.click();" +
-      "URL.revokeObjectURL(url);closePop();" +
-    "}" +
+    function closeReader() {
+      readerStop();
+      document.getElementById('readerOverlay').classList.remove('show');
+    }
 
-    /* ── LOAD ── */
-    "function loadTbl(){document.getElementById('fileIn').click();}" +
-    "document.getElementById('fileIn').addEventListener('change',function(ev){" +
-      "var f=ev.target.files[0];if(!f)return;" +
-      "var rd=new FileReader();" +
-      "rd.onload=function(e){" +
-        "try{" +
-          "var p=JSON.parse(e.target.result);" +
-          "if(p.tbl&&p.tbl.length){" +
-            "TBL=p.tbl;HLW={};" +
-            "if(p.hl)for(var i=0;i<p.hl.length;i++)HLW[p.hl[i]]=true;" +
-            "if(p.txt)document.getElementById('baseIn').value=p.txt;" +
-            "hideUF();render();" +
-            "var re=document.getElementById('rEnd');if(re)re.value=TBL.length;" +
-          "}" +
-        "}catch(err){alert('Invalid table file.');}" +
-      "};" +
-      "rd.readAsText(f);ev.target.value='';" +
-    "});" +
+    function buildReaderContent() {
+      var container = document.getElementById('readerContent');
+      var html = '';
 
-    /* ── MODE SWITCH ── */
-    "function switchMode(m){" +
-      "document.getElementById('btnTabler').classList.remove('on');" +
-      "document.getElementById('btnReader').classList.remove('on');" +
-      "if(m==='r'){" +
-        "document.getElementById('btnReader').classList.add('on');" +
-        "openRdr();" +
-      "}else{" +
-        "document.getElementById('btnTabler').classList.add('on');" +
-        "closeRdr();" +
-      "}" +
-    "}" +
+      for (var s = 0; s < TABLE.length; s++) {
+        html += '<span class="reader-sentence" data-si="' + s + '">';
+        for (var w = 0; w < TABLE[s].length; w++) {
+          var nm = normalize(TABLE[s][w]);
+          var cls = (nm && HIGHLIGHTS[nm]) ? 'highlighted' : '';
+          html += '<span class="reader-word ' + cls + '"'
+            + ' data-t="' + escapeAttr(nm) + '"'
+            + ' onclick="readerWordClick(this)">'
+            + escapeHtml(TABLE[s][w]) + '</span> ';
+        }
+        html += '</span>';
+      }
 
-    /* ═══════════════════════════════════════════
-       READER ENGINE
-       ═══════════════════════════════════════════ */
+      container.innerHTML = html;
+    }
 
-    /* ── OPEN READER ── */
-    "function openRdr(){" +
-      "if(TBL.length===0)return;" +
-      "buildRdr();" +
-      "document.getElementById('rov').classList.add('v');" +
-      "document.getElementById('rEnd').value=TBL.length;" +
-    "}" +
-    "function closeRdr(){" +
-      "rStop();" +
-      "document.getElementById('rov').classList.remove('v');" +
-    "}" +
+    function readerWordClick(el) {
+      var token = el.dataset.t;
+      if (!token) return;
 
-    /* ── BUILD READER CONTENT ── */
-    "function buildRdr(){" +
-      "var rc=document.getElementById('rcont');" +
-      "var h='';" +
-      "for(var s=0;s<TBL.length;s++){" +
-        "h+='<span class=\"rsent\" data-si=\"'+s+'\">';" +
-        "for(var w=0;w<TBL[s].length;w++){" +
-          "var nm=nt(TBL[s][w]);" +
-          "var isH=nm&&HLW[nm];" +
-          "h+='<span class=\"rw'+(isH?' rhl':'')+'\" data-t=\"'+ea(nm)+'\" onclick=\"rwClick(this)\">'+eh(TBL[s][w])+'</span> ';" +
-        "}" +
-        "h+='</span>';" +
-      "}" +
-      "rc.innerHTML=h;" +
-    "}" +
+      if (HIGHLIGHTS[token]) delete HIGHLIGHTS[token];
+      else HIGHLIGHTS[token] = true;
 
-    /* ── READER WORD CLICK ── */
-    "function rwClick(el){" +
-      "var tk=el.dataset.t;if(!tk)return;" +
-      "if(HLW[tk]){delete HLW[tk];}else{HLW[tk]=true;}" +
-      "var all=document.querySelectorAll('.rw');" +
-      "for(var i=0;i<all.length;i++){" +
-        "if(HLW[all[i].dataset.t])all[i].classList.add('rhl');" +
-        "else all[i].classList.remove('rhl');" +
-      "}" +
-      "render();" +
-    "}" +
+      var allWords = document.querySelectorAll('.reader-word');
+      for (var i = 0; i < allWords.length; i++) {
+        if (HIGHLIGHTS[allWords[i].dataset.t]) {
+          allWords[i].classList.add('highlighted');
+        } else {
+          allWords[i].classList.remove('highlighted');
+        }
+      }
+      renderSheet();
+    }
 
-    /* ── UPDATE READER STYLE ── */
-    "function updRdr(){" +
-      "document.getElementById('rSpdV').textContent=parseFloat(document.getElementById('rSpd').value).toFixed(1);" +
-    "}" +
+    function updateReader() {
+      var spd = parseFloat(document.getElementById('readerSpeed').value);
+      document.getElementById('readerSpeedVal').textContent = spd.toFixed(1);
+    }
 
-    /* ── SPEAK (TTS) ── */
-    "function rSpeak(text,lang,rate){" +
-      "return new Promise(function(resolve){" +
-        "if(!text||!text.trim())return resolve();" +
-        "if(!('speechSynthesis' in window))return resolve();" +
-        "var u=new SpeechSynthesisUtterance(text);" +
-        "u.lang=lang||'en-US';" +
-        "u.rate=rate||1;" +
-        "u.onend=resolve;u.onerror=resolve;" +
-        "speechSynthesis.speak(u);" +
-      "});" +
-    "}" +
+    /* ── TTS ── */
+    function speak(text, lang, rate) {
+      return new Promise(function (resolve) {
+        if (!text || !text.trim()) return resolve();
+        if (!('speechSynthesis' in window)) return resolve();
+
+        var utt = new SpeechSynthesisUtterance(text);
+        utt.lang = lang || 'en-US';
+        utt.rate = rate || 1;
+        utt.onend = resolve;
+        utt.onerror = resolve;
+        speechSynthesis.speak(utt);
+      });
+    }
 
     /* ── PLAY / STOP ── */
-    "function rPlay(){" +
-      "if(isR||TBL.length===0)return;" +
-      "isR=true;" +
-      "var lang=document.getElementById('rLang').value;" +
-      "if(lang==='Off')lang='en-US';" +
-      "var spd=parseFloat(document.getElementById('rSpd').value)||1;" +
-      "var start=Math.max(1,parseInt(document.getElementById('rStart').value)||1)-1;" +
-      "var end=Math.min(TBL.length,parseInt(document.getElementById('rEnd').value)||TBL.length)-1;" +
-      "var rpt=Math.max(1,parseInt(document.getElementById('rRpt').value)||1);" +
-      "(async function(){" +
-        "for(var rt=0;rt<rpt;rt++){" +
-          "for(var si=start;si<=end;si++){" +
-            "if(!isR)return;" +
-            "var row=TBL[si];if(!row)continue;" +
-            "var sent=document.querySelector('.rsent[data-si=\"'+si+'\"]');" +
-            "if(sent)sent.classList.add('rs-reading');" +
-            "if(sent)sent.scrollIntoView({behavior:'smooth',block:'center'});" +
-            "for(var wi=0;wi<row.length;wi++){" +
-              "if(!isR){" +
-                "if(sent)sent.classList.remove('rs-reading');" +
-                "return;" +
-              "}" +
-              "var wEl=sent?sent.querySelectorAll('.rw')[wi]:null;" +
-              "if(wEl)wEl.classList.add('ractive');" +
-              "var clean=row[wi].replace(/[\\u{1F600}-\\u{1F64F}]/gu,'').trim();" +
-              "if(clean)await rSpeak(clean,lang,spd);" +
-              "if(wEl)wEl.classList.remove('ractive');" +
-            "}" +
-            "if(sent)sent.classList.remove('rs-reading');" +
-          "}" +
-        "}" +
-        "isR=false;" +
-      "})();" +
-    "}" +
-    "function rStop(){" +
-      "isR=false;" +
-      "if('speechSynthesis' in window)speechSynthesis.cancel();" +
-      "var act=document.querySelectorAll('.ractive');" +
-      "for(var i=0;i<act.length;i++)act[i].classList.remove('ractive');" +
-      "var rds=document.querySelectorAll('.rs-reading');" +
-      "for(var j=0;j<rds.length;j++)rds[j].classList.remove('rs-reading');" +
-    "}" +
+    function readerPlay() {
+      if (isReading || TABLE.length === 0) return;
+      isReading = true;
 
-    /* ── KEYBOARD SHORTCUTS ── */
-    "document.addEventListener('keydown',function(e){" +
-      "if(e.key==='Escape'){closePop();closeRdr();switchMode('t');}" +
-      "if(e.ctrlKey&&e.key==='s'){e.preventDefault();saveTbl();}" +
-      "if(e.ctrlKey&&e.key==='Enter'){e.preventDefault();uploadText();}" +
-    "});" +
+      var lang = document.getElementById('readerLang').value;
+      if (lang === 'Off') lang = 'en-US';
 
-    "<\/script></body></html>"
-  );
+      var spd   = parseFloat(document.getElementById('readerSpeed').value) || 1;
+      var start = Math.max(1, parseInt(document.getElementById('readerStart').value) || 1) - 1;
+      var end   = Math.min(TABLE.length, parseInt(document.getElementById('readerEnd').value) || TABLE.length) - 1;
+      var rpt   = Math.max(1, parseInt(document.getElementById('readerRepeat').value) || 1);
 
+      (async function () {
+        for (var rt = 0; rt < rpt; rt++) {
+          for (var si = start; si <= end; si++) {
+            if (!isReading) return;
+            var row = TABLE[si];
+            if (!row) continue;
+
+            var sent = document.querySelector(
+              '.reader-sentence[data-si="' + si + '"]'
+            );
+            if (sent) {
+              sent.classList.add('reading');
+              sent.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            for (var wi = 0; wi < row.length; wi++) {
+              if (!isReading) {
+                if (sent) sent.classList.remove('reading');
+                return;
+              }
+              var wEl = sent ? sent.querySelectorAll('.reader-word')[wi] : null;
+              if (wEl) wEl.classList.add('active');
+
+              var clean = row[wi].replace(/[\\u{1F600}-\\u{1F64F}]/gu, '').trim();
+              if (clean) await speak(clean, lang, spd);
+
+              if (wEl) wEl.classList.remove('active');
+            }
+
+            if (sent) sent.classList.remove('reading');
+          }
+        }
+        isReading = false;
+      })();
+    }
+
+    function readerStop() {
+      isReading = false;
+      if ('speechSynthesis' in window) speechSynthesis.cancel();
+
+      var act = document.querySelectorAll('.reader-word.active');
+      for (var i = 0; i < act.length; i++) act[i].classList.remove('active');
+
+      var rds = document.querySelectorAll('.reader-sentence.reading');
+      for (var j = 0; j < rds.length; j++) rds[j].classList.remove('reading');
+    }
+
+    /* ═══════════════════════════════════════════════
+       KEYBOARD SHORTCUTS
+       ═══════════════════════════════════════════════ */
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        closeSave();
+        closeReader();
+        switchMode('t');
+      }
+      if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        saveTbl();
+      }
+      if (e.ctrlKey && e.key === 'Enter') {
+        e.preventDefault();
+        uploadText();
+      }
+    });
+  <\\/script>
+</body>
+</html>`;
+
+  w.document.write(html);
   w.document.close();
 });
+
+
+
+
 
 // ===============================
 // RECORDER BUTTON EVENTS
