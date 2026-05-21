@@ -457,26 +457,49 @@ placeCaretAtEnd(activeCell);
 
 // ===============================
 // SPEAK FUNCTION
-// ===============================
 function speak(text, lang, rate) {
 return new Promise(resolve => {
-if (!text || !text.trim()) return resolve();
 
-const utter = new SpeechSynthesisUtterance(text);
-const voice = getVoice(lang);
+if (!text || !text.trim())
+return resolve();
 
-if (voice) {
-utter.voice = voice;
-utter.lang = voice.lang;
-} else if (lang && lang !== "Off") {
-utter.lang = LEGACY_LANG_MAP[lang] || lang;
+const utter =
+new SpeechSynthesisUtterance(text);
+
+const voices =
+speechSynthesis.getVoices();
+
+const betterVoice = voices.find(v =>
+
+v.name.includes("Michael") ||
+v.name.includes("Robert") ||
+v.name.includes("Quincy") ||
+v.name.includes("Zac")
+
+);
+
+if (betterVoice) {
+utter.voice = betterVoice;
+utter.lang = betterVoice.lang;
 }
 
-utter.rate = rate || 1;
+utter.rate =
+(rate || 0.93) +
+(Math.random() * 0.05);
+
+utter.pitch =
+0.97 +
+(Math.random() * 0.05);
+
+utter.text = text
+.replace(/\n/g, ". ")
+.replace(/\s+/g, " ");
+
 utter.onend = resolve;
 utter.onerror = resolve;
 
 speechSynthesis.speak(utter);
+
 });
 }
 
