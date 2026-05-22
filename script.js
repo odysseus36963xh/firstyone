@@ -519,7 +519,6 @@ function stopReading() {
 // MEDIA PLAYER (MULTI-FILE + NO FREEZE)
 // ===============================
 
-
 function playCellMedia(cell) {
   return new Promise(async (resolve) => {
     let mediaUrls = [];
@@ -529,7 +528,7 @@ function playCellMedia(cell) {
       mediaUrls = cell.dataset.mediaUrls ? JSON.parse(cell.dataset.mediaUrls) : [];
       mediaTypes = cell.dataset.mediaTypes ? JSON.parse(cell.dataset.mediaTypes) : [];
     } catch (e) {
-      console.error("Bad media data", e);
+      console.error("Bad media data:", e);
       return resolve({ hasAudio: false, hasImage: false });
     }
 
@@ -546,73 +545,89 @@ function playCellMedia(cell) {
     mediaUrls.forEach((url, i) => {
       const type = mediaTypes[i] || "";
 
-      if (type.startsWith("image")) {
+      if (isImageType(type)) {
         images.push(url);
-      } else if (type.startsWith("audio")) {
+      } else if (isAudioType(type)) {
         audios.push(url);
-      } else if (type.startsWith("video")) {
+      } else if (isVideoType(type)) {
         videos.push(url);
       } else {
-        // fallback: if type is weird, try audio
+        // If unknown, try treating it as audio
         audios.push(url);
       }
     });
 
     if (popup) {
-      let html = "";
+      popup.innerHTML = "";
 
       images.forEach(url => {
-        html += `<img src="${url}" style="max-width:100%;margin:4px 0;">`;
+        const img = document.createElement("img");
+        img.src = url;
+        img.style.cssText = "max-width:100%;margin:4px 0;";
+        popup.appendChild(img);
       });
 
       videos.forEach(url => {
-        html += `<video src="${url}" controls autoplay style="max-width:100%;margin:4px 0;"></video>`;
+        const video = document.createElement("video");
+        video.src = url;
+        video.controls = true;
+        video.style.cssText = "max-width:100%;margin:4px 0;";
+        popup.appendChild(video);
       });
-
-      audios.forEach(url => {
-        html += `<audio src="${url}" controls style="width:100%;margin:4px 0;"></audio>`;
-      });
-
-      popup.innerHTML = html;
 
       if (images.length || videos.length || audios.length) {
         popup.classList.add("show");
       }
     }
 
+    // If only image/video but no audio, do not block long
     if (!audios.length) {
-      return resolve({ hasAudio: false, hasImage: images.length > 0 });
+      setTimeout(() => {
+        resolve({
+          hasAudio: false,
+          hasImage: images.length > 0
+        });
+      }, 300);
+
+      return;
     }
 
     window.currentMediaElements = [];
 
-    // Play audio files ONE BY ONE and wait for each to finish
+    // Play audio files ONE BY ONE.
+    // Reader will not continue until each one ends.
     for (const url of audios) {
       if (!isReading) break;
 
-      const audio = new Audio(url);
+      const audio = document.createElement("audio");
+      audio.src = url;
+      audio.controls = true;
       audio.preload = "auto";
+      audio.style.cssText = "width:100%;margin:4px 0;";
+
+      if (popup) {
+        popup.appendChild(audio);
+        popup.classList.add("show");
+      }
+
       window.currentMediaElements.push(audio);
 
-      try {
-        await playOneAudio(audio);
-      } catch (err) {
-        console.error("Audio failed:", err);
-      }
+      await playAndWaitForAudio(audio);
     }
 
-    if (popup) popup.classList.remove("show");
     window.currentMediaElements = null;
 
-    resolve({ hasAudio: true, hasImage: images.length > 0 });
+    if (popup) popup.classList.remove("show");
+
+    resolve({
+      hasAudio: true,
+      hasImage: images.length > 0
+    });
   });
 }
 
 
-
-
-
-function playOneAudio(audio) {
+function playAndWaitForAudio(audio) {
   return new Promise((resolve) => {
     let finished = false;
 
@@ -620,13 +635,11 @@ function playOneAudio(audio) {
       if (finished) return;
       finished = true;
 
+      clearTimeout(timeout);
+
       audio.onended = null;
       audio.onerror = null;
       audio.onabort = null;
-
-      try {
-        audio.pause();
-      } catch (e) {}
 
       resolve();
     }
@@ -635,41 +648,58 @@ function playOneAudio(audio) {
     audio.onerror = done;
     audio.onabort = done;
 
-    // Safety timeout so app never freezes forever
-    const safety = setTimeout(() => {
-      console.warn("Audio timeout, moving on");
+    // Safety timeout so app cannot freeze forever
+    const timeout = setTimeout(() => {
+      console.warn("Audio timeout, moving to next cell");
+      try {
+        audio.pause();
+      } catch (e) {}
       done();
-    }, 60000);
+    }, 120000);
 
-    const oldDone = done;
-    function doneWithClear() {
-      clearTimeout(safety);
-      oldDone();
-    }
+    audio.play().catch(err => {
+      console.error("Audio autoplay failed:", err);
 
-    audio.onended = doneWithClear;
-    audio.onerror = doneWithClear;
-    audio.onabort = doneWithClear;
-
-    audio.play().then(() => {
-      console.log("Audio started automatically");
-    }).catch(err => {
-      console.error("Browser blocked autoplay or audio failed:", err);
-
-      // If browser blocks autoplay, show warning
       const popup = document.getElementById("mediaPopup");
       if (popup) {
-        const msg = document.createElement("div");
-        msg.style.cssText = "color:red;background:white;padding:6px;font-size:13px;";
-        msg.textContent = "Browser blocked automatic audio. Click the audio play button once.";
-        popup.prepend(msg);
+        const warning = document.createElement("div");
+        warning.style.cssText =
+          "background:#fff3cd;color:#856404;padding:6px;margin:4px 0;border-radius:4px;font-size:13px;";
+        warning.textContent =
+          "Audio was blocked by browser. Click play. Reader will wait until it finishes.";
+        popup.prepend(warning);
       }
 
-      doneWithClear();
+      // DO NOT resolve here.
+      // This is important.
+      // If autoplay is blocked, user can click play manually,
+      // and the reader will still wait for audio.onended.
     });
   });
 }
 
+function isImageType(type) {
+  return type.startsWith("image");
+}
+
+function isAudioType(type) {
+  return (
+    type.startsWith("audio") ||
+    type.includes("ogg") ||
+    type.includes("mp3") ||
+    type.includes("mpeg") ||
+    type.includes("wav") ||
+    type.includes("webm")
+  );
+}
+
+function isVideoType(type) {
+  return (
+    type.startsWith("video") ||
+    type.includes("mp4") ||
+    type.includes("mov")
+  );
+}
 // ===============================
 // MAIN READING ENGINE
 // ===============================
@@ -698,61 +728,98 @@ async function startReading() {
 
   let rowRange = [];
   let colRange = [];
+
   for (let r = start.row; r <= end.row; r++) rowRange.push(r);
   for (let c = start.col; c <= end.col; c++) colRange.push(c);
 
-  if (reverse) { rowRange.reverse(); colRange.reverse(); }
+  if (reverse) {
+    rowRange.reverse();
+    colRange.reverse();
+  }
 
-  for (let rt = 0; rt < repeatTable; rt++) {
-    if (!isReading) return;
-    for (let r of rowRange) {
+  try {
+    for (let rt = 0; rt < repeatTable; rt++) {
       if (!isReading) return;
-      const row = table.rows[r + 1];
-      if (!row) continue;
 
-      for (let rr = 0; rr < repeatRow; rr++) {
-        for (let c of colRange) {
+      for (let r of rowRange) {
+        if (!isReading) return;
+
+        const row = table.rows[r + 1];
+        if (!row) continue;
+
+        for (let rr = 0; rr < repeatRow; rr++) {
           if (!isReading) return;
-          const cell = row.cells[c + 1];
-          if (!cell) continue;
-          
-          const text = cell.innerText || "";
-          const selector = table.rows[1]?.cells[c + 1]?.querySelector("select");
-          const lang = selector?.value || "Off";
-          const hasMedia = cell.dataset.mediaUrls && JSON.parse(cell.dataset.mediaUrls).length > 0;
 
-          // Skip if language is Off, OR if there's no text AND no media attached
-          if (!text.trim() && !hasMedia) continue;
-
-          for (let rc = 0; rc < repeatCell; rc++) {
+          for (let c of colRange) {
             if (!isReading) return;
-            cell.classList.add("reading");
-              // 1. Play media (image popup or audio/video playback)
-            const mediaResult = await playCellMedia(cell);
 
-if (!isReading) return; // Check again in case user clicked Stop during media
+            const cell = row.cells[c + 1];
+            if (!cell) continue;
 
-// 2. Read text via TTS (Only if there was no audio played)
-if (!mediaResult.hasAudio) {
-              // Strip the emojis out so the TTS doesn't read them out loud
-              let cleanText = text.replace(/[🖼️🎵🎥]/g, "").trim(); 
-              if (cleanText) {
-                await speak(cleanText, lang, speed);
-              }
+            const rawText = cell.innerText || "";
+            const cleanText = rawText.replace(/[🖼️🎵🎥]/g, "").trim();
+
+            const selector = table.rows[1]?.cells[c + 1]?.querySelector("select");
+            const lang = selector?.value || "Off";
+
+            let hasMedia = false;
+            try {
+              hasMedia =
+                cell.dataset.mediaUrls &&
+                JSON.parse(cell.dataset.mediaUrls).length > 0;
+            } catch (e) {
+              hasMedia = false;
             }
 
-            // 3. Clean up the popup card after it finishes the cell
-            const popup = document.getElementById("mediaPopup");
-            if (popup) popup.classList.remove("show");
+            /*
+              IMPORTANT LOGIC:
 
-            cell.classList.remove("reading");
+              - If cell has media, allow it even if language is Off.
+              - If cell has no media and language is Off, skip it.
+              - If cell has no text and no media, skip it.
+            */
+            if (!hasMedia && (lang === "Off" || !cleanText)) {
+              continue;
+            }
+
+            for (let rc = 0; rc < repeatCell; rc++) {
+              if (!isReading) return;
+
+              cell.classList.add("reading");
+
+              // 1. Play media and WAIT until audio finishes
+              const mediaResult = await playCellMedia(cell);
+
+              if (!isReading) return;
+
+              // 2. Only read text if:
+              // - no audio was played
+              // - language is not Off
+              // - text exists
+              if (!mediaResult.hasAudio && lang !== "Off" && cleanText) {
+                await speak(cleanText, lang, speed);
+              }
+
+              cell.classList.remove("reading");
+
+              const popup = document.getElementById("mediaPopup");
+              if (popup) popup.classList.remove("show");
+            }
           }
         }
       }
     }
+  } finally {
+    isReading = false;
+    clearHighlight();
+
+    const popup = document.getElementById("mediaPopup");
+    if (popup) popup.classList.remove("show");
   }
-  isReading = false;
 }
+
+
+
 
 
 
