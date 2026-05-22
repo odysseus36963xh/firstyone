@@ -528,90 +528,110 @@ function playCellMedia(cell) {
     const timeoutId = setTimeout(() => {
       console.warn("Media playback timeout - moving on");
       if (window.currentMediaElements) {
-        window.currentMediaElements.forEach(el => el.pause());
+        window.currentMediaElements.forEach(el => { try { el.pause(); } catch(e) {} });
         window.currentMediaElements = null;
       }
-      popup.classList.remove("show");
-      resolve({hasAudio: false, hasImage: false});
+      if (popup) popup.classList.remove("show");
+      resolve({ hasAudio: false, hasImage: false });
     }, 30000);
 
     if (!popup || mediaUrls.length === 0) {
       clearTimeout(timeoutId);
-      return resolve({hasAudio: false, hasImage: false});
+      return resolve({ hasAudio: false, hasImage: false });
     }
 
     // Separate media by type
     const images = [];
     const audios = [];
     const videos = [];
-    
+
     mediaTypes.forEach((type, i) => {
-        if (type.startsWith('image')) images.push(mediaUrls[i]);
-        else if (type.startsWith('audio')) audios.push(mediaUrls[i]);
-        else if (type.startsWith('video')) videos.push(mediaUrls[i]);
+      if (type.startsWith('image')) images.push(mediaUrls[i]);
+      else if (type.startsWith('audio')) audios.push(mediaUrls[i]);
+      else if (type.startsWith('video')) videos.push(mediaUrls[i]);
     });
 
     // Build popup with images/videos (visible)
     let popupHTML = '';
     images.forEach(url => popupHTML += `<img src="${url}" style="max-width:100%;margin:2px 0;">`);
     videos.forEach(url => popupHTML += `<video src="${url}" controls style="max-width:100%;margin:2px 0;"></video>`);
-    
+
     popup.innerHTML = popupHTML;
     if (images.length > 0 || videos.length > 0) {
-        popup.classList.add("show");
+      popup.classList.add("show");
     }
 
-    // Handle audio playback (invisible, background)
-    const audioElements = audios.map(url => {
-        const audio = new Audio(url);
-        audio.style.cssText = "position:absolute;opacity:0;pointer-events:none;";
-        return audio;
-    });
-
-    // If no audio, resolve quickly
-    if (audioElements.length === 0) {
-        setTimeout(() => {
-            clearTimeout(timeoutId);
-            resolve({hasAudio: false, hasImage: images.length > 0});
-        }, 100);
-        return;
-    }
-
-    // Play audio and wait for completion
-    window.currentMediaElements = audioElements;
-    let audioCompleted = 0;
-
-    audioElements.forEach(audio => {
-        audio.onended = () => {
-            audioCompleted++;
-            if (audioCompleted === audioElements.length) complete();
-        };
-        
-        audio.onerror = () => {
-            audioCompleted++;
-            if (audioCompleted === audioElements.length) complete();
-        };
-    });
-
-      function complete() {
+    // === IF NO AUDIO FILES, resolve quickly ===
+    if (audios.length === 0) {
+      setTimeout(() => {
         clearTimeout(timeoutId);
-        popup.classList.remove("show");
-        window.currentMediaElements = null;
-        resolve({hasAudio: true, hasImage: images.length > 0}); // ✅ Resolve HERE
+        resolve({ hasAudio: false, hasImage: images.length > 0 });
+      }, 100);
+      return;
     }
-    
-    // Start playing all audio files
-    audioElements.forEach(audio => {
-        audio.play().catch(err => {
+
+    // === KEY FIX: Each audio gets its own Promise ===
+    // We wait for ALL audio files to finish before resolving
+    const audioElements = [];
+
+    const audioPromises = audios.map(url => {
+      return new Promise((audioResolve) => {
+        const audio = new Audio();
+
+        // Attach listeners BEFORE setting src
+        audio.onended = () => {
+          console.log("Audio finished:", url);
+          audioResolve();
+        };
+
+        audio.onerror = (e) => {
+          console.error("Audio error:", url, e);
+          audioResolve(); // Don't get stuck, move on
+        };
+
+        // Handle case where audio fails to load at all
+        audio.onabort = () => {
+          console.warn("Audio aborted:", url);
+          audioResolve();
+        };
+
+        // Now set the source and play
+        audio.src = url;
+        audio.preload = "auto";
+        audioElements.push(audio);
+
+        // Wait for it to be ready, THEN play
+        audio.addEventListener('canplaythrough', () => {
+          audio.play().catch(err => {
             console.error("Audio play failed:", err);
-            audio.onerror();
-        });
+            audioResolve(); // Don't freeze
+          });
+        }, { once: true });
+
+        // Fallback: if canplaythrough never fires
+        setTimeout(() => {
+          if (audio.readyState >= 3) return; // Already playing
+          audio.play().catch(err => {
+            console.error("Fallback play failed:", err);
+            audioResolve();
+          });
+        }, 1000);
+      });
     });
-    // ❌ REMOVED: }); ← Don't close here!
-  });  // ← Only close after complete() runs
+
+    // Store for stop button
+    window.currentMediaElements = audioElements;
+
+    // === THIS IS THE "IF STATEMENT" YOU WERE THINKING OF ===
+    // Wait for ALL audio to complete, THEN move on
+    Promise.all(audioPromises).then(() => {
+      clearTimeout(timeoutId);
+      if (popup) popup.classList.remove("show");
+      window.currentMediaElements = null;
+      resolve({ hasAudio: true, hasImage: images.length > 0 });
+    });
+  });
 }
-
-
 // ===============================
 // MAIN READING ENGINE
 // ===============================
