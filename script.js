@@ -718,7 +718,7 @@ async function startReading() {
     return;
   }
 
-  const speed = parseFloat(document.getElementById("speed")?.value || "1");
+  const getSpeed = () => parseFloat(document.getElementById("speed")?.value || "1");
   const repeatRow = parseInt(document.getElementById("repeatRow")?.value || "1");
   const repeatTable = parseInt(document.getElementById("repeatTable")?.value || "1");
   const repeatCell = parseInt(document.getElementById("repeatCell")?.value || "1");
@@ -798,7 +798,7 @@ async function startReading() {
               // - language is not Off
               // - text exists
               if (!mediaResult.hasAudio && lang !== "Off" && cleanText) {
-                await speak(cleanText, lang, speed);
+                await speak(cleanText, lang, getSpeed());
               }
 
               cell.classList.remove("reading");
