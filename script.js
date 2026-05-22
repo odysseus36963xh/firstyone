@@ -518,143 +518,158 @@ function stopReading() {
 // ===============================
 // MEDIA PLAYER (MULTI-FILE + NO FREEZE)
 // ===============================
+
+
 function playCellMedia(cell) {
-  return new Promise((resolve) => {
-    const mediaUrls = cell.dataset.mediaUrls ? JSON.parse(cell.dataset.mediaUrls) : [];
-    const mediaTypes = cell.dataset.mediaTypes ? JSON.parse(cell.dataset.mediaTypes) : [];
-    const popup = document.getElementById("mediaPopup");
+  return new Promise(async (resolve) => {
+    let mediaUrls = [];
+    let mediaTypes = [];
 
-    // Safety timeout (60 seconds max per cell for multiple files)
-    const timeoutId = setTimeout(() => {
-      console.warn("Media playback timeout - moving on");
-      if (window.currentMediaElements) {
-        window.currentMediaElements.forEach(el => { try { el.pause(); } catch(e) {} });
-        window.currentMediaElements = null;
-      }
-      if (popup) popup.classList.remove("show");
-      resolve({ hasAudio: false, hasImage: false });
-    }, 60000);
-
-    if (!popup || mediaUrls.length === 0) {
-      clearTimeout(timeoutId);
+    try {
+      mediaUrls = cell.dataset.mediaUrls ? JSON.parse(cell.dataset.mediaUrls) : [];
+      mediaTypes = cell.dataset.mediaTypes ? JSON.parse(cell.dataset.mediaTypes) : [];
+    } catch (e) {
+      console.error("Bad media data", e);
       return resolve({ hasAudio: false, hasImage: false });
     }
 
-    // Separate media by type
+    const popup = document.getElementById("mediaPopup");
+
+    if (!mediaUrls.length) {
+      return resolve({ hasAudio: false, hasImage: false });
+    }
+
     const images = [];
     const audios = [];
     const videos = [];
 
-    mediaTypes.forEach((type, i) => {
-      if (type.startsWith('image')) images.push(mediaUrls[i]);
-      else if (type.startsWith('audio')) audios.push(mediaUrls[i]);
-      else if (type.startsWith('video')) videos.push(mediaUrls[i]);
+    mediaUrls.forEach((url, i) => {
+      const type = mediaTypes[i] || "";
+
+      if (type.startsWith("image")) {
+        images.push(url);
+      } else if (type.startsWith("audio")) {
+        audios.push(url);
+      } else if (type.startsWith("video")) {
+        videos.push(url);
+      } else {
+        // fallback: if type is weird, try audio
+        audios.push(url);
+      }
     });
 
-    // Build popup with images/videos
-    let popupHTML = '';
-    images.forEach(url => popupHTML += `<img src="${url}" style="max-width:100%;margin:2px 0;">`);
-    videos.forEach(url => popupHTML += `<video src="${url}" controls style="max-width:100%;margin:2px 0;"></video>`);
+    if (popup) {
+      let html = "";
 
-    popup.innerHTML = popupHTML;
-    if (images.length > 0 || videos.length > 0) {
-      popup.classList.add("show");
+      images.forEach(url => {
+        html += `<img src="${url}" style="max-width:100%;margin:4px 0;">`;
+      });
+
+      videos.forEach(url => {
+        html += `<video src="${url}" controls autoplay style="max-width:100%;margin:4px 0;"></video>`;
+      });
+
+      audios.forEach(url => {
+        html += `<audio src="${url}" controls style="width:100%;margin:4px 0;"></audio>`;
+      });
+
+      popup.innerHTML = html;
+
+      if (images.length || videos.length || audios.length) {
+        popup.classList.add("show");
+      }
     }
 
-    // === IF NO AUDIO, resolve quickly ===
-    if (audios.length === 0) {
-      setTimeout(() => {
-        clearTimeout(timeoutId);
-        resolve({ hasAudio: false, hasImage: images.length > 0 });
-      }, 100);
-      return;
+    if (!audios.length) {
+      return resolve({ hasAudio: false, hasImage: images.length > 0 });
     }
 
-    // === KEY FIX: Play audio files ONE BY ONE (sequentially) ===
-    // This is the "if statement" logic — finish one, THEN play next
+    window.currentMediaElements = [];
 
-    function playAudioSequentially(index) {
-      // Base case: all audio files finished
-      if (index >= audios.length) {
-        clearTimeout(timeoutId);
-        if (popup) popup.classList.remove("show");
-        window.currentMediaElements = null;
-        resolve({ hasAudio: true, hasImage: images.length > 0 });
-        return;
-      }
+    // Play audio files ONE BY ONE and wait for each to finish
+    for (const url of audios) {
+      if (!isReading) break;
 
-      // Check if user pressed Stop
-      if (!isReading) {
-        clearTimeout(timeoutId);
-        if (popup) popup.classList.remove("show");
-        window.currentMediaElements = null;
-        resolve({ hasAudio: true, hasImage: images.length > 0 });
-        return;
-      }
-
-      const url = audios[index];
-      const audio = new Audio();
-      let hasResolved = false; // Prevent double-firing
-
-      function moveToNext() {
-        if (hasResolved) return;
-        hasResolved = true;
-        console.log(`Audio ${index + 1}/${audios.length} finished:`, url);
-        // Play the NEXT audio file
-        playAudioSequentially(index + 1);
-      }
-
-      // Attach listeners BEFORE setting src
-      audio.onended = moveToNext;
-
-      audio.onerror = (e) => {
-        console.error(`Audio ${index + 1} error:`, url, e);
-        moveToNext(); // Don't get stuck, skip to next
-      };
-
-      audio.onabort = () => {
-        console.warn(`Audio ${index + 1} aborted:`, url);
-        moveToNext();
-      };
-
-      // Set source
-      audio.src = url;
+      const audio = new Audio(url);
       audio.preload = "auto";
+      window.currentMediaElements.push(audio);
 
-      // Track for stop button
-      window.currentMediaElements = [audio];
-
-      // Wait until audio is ready, then play
-      audio.addEventListener('canplaythrough', () => {
-        if (hasResolved) return;
-        audio.play().catch(err => {
-          console.error("Play failed:", err);
-          moveToNext();
-        });
-      }, { once: true });
-
-      // Fallback: if canplaythrough never fires within 2 seconds
-      setTimeout(() => {
-        if (hasResolved) return;
-        if (audio.readyState >= 2) {
-          // It's loaded enough, try playing
-          audio.play().catch(err => {
-            console.error("Fallback play failed:", err);
-            moveToNext();
-          });
-        } else if (audio.readyState === 0) {
-          // Never even started loading — skip
-          console.warn("Audio never loaded, skipping:", url);
-          moveToNext();
-        }
-        // If readyState is 1, it's loading — give it more time
-      }, 2000);
+      try {
+        await playOneAudio(audio);
+      } catch (err) {
+        console.error("Audio failed:", err);
+      }
     }
 
-    // Start playing from the first audio file
-    playAudioSequentially(0);
+    if (popup) popup.classList.remove("show");
+    window.currentMediaElements = null;
+
+    resolve({ hasAudio: true, hasImage: images.length > 0 });
   });
 }
+
+
+
+
+
+function playOneAudio(audio) {
+  return new Promise((resolve) => {
+    let finished = false;
+
+    function done() {
+      if (finished) return;
+      finished = true;
+
+      audio.onended = null;
+      audio.onerror = null;
+      audio.onabort = null;
+
+      try {
+        audio.pause();
+      } catch (e) {}
+
+      resolve();
+    }
+
+    audio.onended = done;
+    audio.onerror = done;
+    audio.onabort = done;
+
+    // Safety timeout so app never freezes forever
+    const safety = setTimeout(() => {
+      console.warn("Audio timeout, moving on");
+      done();
+    }, 60000);
+
+    const oldDone = done;
+    function doneWithClear() {
+      clearTimeout(safety);
+      oldDone();
+    }
+
+    audio.onended = doneWithClear;
+    audio.onerror = doneWithClear;
+    audio.onabort = doneWithClear;
+
+    audio.play().then(() => {
+      console.log("Audio started automatically");
+    }).catch(err => {
+      console.error("Browser blocked autoplay or audio failed:", err);
+
+      // If browser blocks autoplay, show warning
+      const popup = document.getElementById("mediaPopup");
+      if (popup) {
+        const msg = document.createElement("div");
+        msg.style.cssText = "color:red;background:white;padding:6px;font-size:13px;";
+        msg.textContent = "Browser blocked automatic audio. Click the audio play button once.";
+        popup.prepend(msg);
+      }
+
+      doneWithClear();
+    });
+  });
+}
+
 // ===============================
 // MAIN READING ENGINE
 // ===============================
