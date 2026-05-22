@@ -472,7 +472,7 @@ function speak(text, lang, rate) {
       utter.lang = LEGACY_LANG_MAP[lang] || lang;
     }
 
-    utter.rate = (parseFloat(rate) || 1) * 0.85;
+ utter.rate = rate || 1;
 utter.pitch = 1.05;
     utter.onend = resolve;
     utter.onerror = resolve;
