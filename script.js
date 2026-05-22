@@ -722,7 +722,7 @@ async function startReading() {
           const hasMedia = cell.dataset.mediaUrls && JSON.parse(cell.dataset.mediaUrls).length > 0;
 
           // Skip if language is Off, OR if there's no text AND no media attached
-          if (lang === "Off" || (!text.trim() && !hasMedia)) continue;
+          if (!text.trim() && !hasMedia) continue;
 
           for (let rc = 0; rc < repeatCell; rc++) {
             if (!isReading) return;
