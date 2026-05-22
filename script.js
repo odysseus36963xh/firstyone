@@ -524,7 +524,7 @@ function playCellMedia(cell) {
     const mediaTypes = cell.dataset.mediaTypes ? JSON.parse(cell.dataset.mediaTypes) : [];
     const popup = document.getElementById("mediaPopup");
 
-    // Safety timeout (30 seconds max per cell)
+    // Safety timeout (60 seconds max per cell for multiple files)
     const timeoutId = setTimeout(() => {
       console.warn("Media playback timeout - moving on");
       if (window.currentMediaElements) {
@@ -533,7 +533,7 @@ function playCellMedia(cell) {
       }
       if (popup) popup.classList.remove("show");
       resolve({ hasAudio: false, hasImage: false });
-    }, 30000);
+    }, 60000);
 
     if (!popup || mediaUrls.length === 0) {
       clearTimeout(timeoutId);
@@ -551,7 +551,7 @@ function playCellMedia(cell) {
       else if (type.startsWith('video')) videos.push(mediaUrls[i]);
     });
 
-    // Build popup with images/videos (visible)
+    // Build popup with images/videos
     let popupHTML = '';
     images.forEach(url => popupHTML += `<img src="${url}" style="max-width:100%;margin:2px 0;">`);
     videos.forEach(url => popupHTML += `<video src="${url}" controls style="max-width:100%;margin:2px 0;"></video>`);
@@ -561,7 +561,7 @@ function playCellMedia(cell) {
       popup.classList.add("show");
     }
 
-    // === IF NO AUDIO FILES, resolve quickly ===
+    // === IF NO AUDIO, resolve quickly ===
     if (audios.length === 0) {
       setTimeout(() => {
         clearTimeout(timeoutId);
@@ -570,66 +570,89 @@ function playCellMedia(cell) {
       return;
     }
 
-    // === KEY FIX: Each audio gets its own Promise ===
-    // We wait for ALL audio files to finish before resolving
-    const audioElements = [];
+    // === KEY FIX: Play audio files ONE BY ONE (sequentially) ===
+    // This is the "if statement" logic — finish one, THEN play next
 
-    const audioPromises = audios.map(url => {
-      return new Promise((audioResolve) => {
-        const audio = new Audio();
+    function playAudioSequentially(index) {
+      // Base case: all audio files finished
+      if (index >= audios.length) {
+        clearTimeout(timeoutId);
+        if (popup) popup.classList.remove("show");
+        window.currentMediaElements = null;
+        resolve({ hasAudio: true, hasImage: images.length > 0 });
+        return;
+      }
 
-        // Attach listeners BEFORE setting src
-        audio.onended = () => {
-          console.log("Audio finished:", url);
-          audioResolve();
-        };
+      // Check if user pressed Stop
+      if (!isReading) {
+        clearTimeout(timeoutId);
+        if (popup) popup.classList.remove("show");
+        window.currentMediaElements = null;
+        resolve({ hasAudio: true, hasImage: images.length > 0 });
+        return;
+      }
 
-        audio.onerror = (e) => {
-          console.error("Audio error:", url, e);
-          audioResolve(); // Don't get stuck, move on
-        };
+      const url = audios[index];
+      const audio = new Audio();
+      let hasResolved = false; // Prevent double-firing
 
-        // Handle case where audio fails to load at all
-        audio.onabort = () => {
-          console.warn("Audio aborted:", url);
-          audioResolve();
-        };
+      function moveToNext() {
+        if (hasResolved) return;
+        hasResolved = true;
+        console.log(`Audio ${index + 1}/${audios.length} finished:`, url);
+        // Play the NEXT audio file
+        playAudioSequentially(index + 1);
+      }
 
-        // Now set the source and play
-        audio.src = url;
-        audio.preload = "auto";
-        audioElements.push(audio);
+      // Attach listeners BEFORE setting src
+      audio.onended = moveToNext;
 
-        // Wait for it to be ready, THEN play
-        audio.addEventListener('canplaythrough', () => {
-          audio.play().catch(err => {
-            console.error("Audio play failed:", err);
-            audioResolve(); // Don't freeze
-          });
-        }, { once: true });
+      audio.onerror = (e) => {
+        console.error(`Audio ${index + 1} error:`, url, e);
+        moveToNext(); // Don't get stuck, skip to next
+      };
 
-        // Fallback: if canplaythrough never fires
-        setTimeout(() => {
-          if (audio.readyState >= 3) return; // Already playing
+      audio.onabort = () => {
+        console.warn(`Audio ${index + 1} aborted:`, url);
+        moveToNext();
+      };
+
+      // Set source
+      audio.src = url;
+      audio.preload = "auto";
+
+      // Track for stop button
+      window.currentMediaElements = [audio];
+
+      // Wait until audio is ready, then play
+      audio.addEventListener('canplaythrough', () => {
+        if (hasResolved) return;
+        audio.play().catch(err => {
+          console.error("Play failed:", err);
+          moveToNext();
+        });
+      }, { once: true });
+
+      // Fallback: if canplaythrough never fires within 2 seconds
+      setTimeout(() => {
+        if (hasResolved) return;
+        if (audio.readyState >= 2) {
+          // It's loaded enough, try playing
           audio.play().catch(err => {
             console.error("Fallback play failed:", err);
-            audioResolve();
+            moveToNext();
           });
-        }, 1000);
-      });
-    });
+        } else if (audio.readyState === 0) {
+          // Never even started loading — skip
+          console.warn("Audio never loaded, skipping:", url);
+          moveToNext();
+        }
+        // If readyState is 1, it's loading — give it more time
+      }, 2000);
+    }
 
-    // Store for stop button
-    window.currentMediaElements = audioElements;
-
-    // === THIS IS THE "IF STATEMENT" YOU WERE THINKING OF ===
-    // Wait for ALL audio to complete, THEN move on
-    Promise.all(audioPromises).then(() => {
-      clearTimeout(timeoutId);
-      if (popup) popup.classList.remove("show");
-      window.currentMediaElements = null;
-      resolve({ hasAudio: true, hasImage: images.length > 0 });
-    });
+    // Start playing from the first audio file
+    playAudioSequentially(0);
   });
 }
 // ===============================
