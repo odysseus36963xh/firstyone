@@ -778,8 +778,8 @@ async function startReading() {
               - If cell has no media and language is Off, skip it.
               - If cell has no text and no media, skip it.
             */
-            if (!hasMedia && (lang === "Off" || !cleanText)) {
-              continue;
+            if (lang === "Off" || (!hasMedia && !cleanText)) {
+            continue;
             }
 
             for (let rc = 0; rc < repeatCell; rc++) {
