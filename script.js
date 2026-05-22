@@ -593,13 +593,13 @@ function playCellMedia(cell) {
         };
     });
 
-    function complete() {
+        function complete() {
         clearTimeout(timeoutId);
         popup.classList.remove("show");
         window.currentMediaElements = null;
-        resolve({hasAudio: true, hasImage: images.length > 0});
+        resolve({hasAudio: true, hasImage: images.length > 0}); // ✅ Resolve HERE
     }
-
+    
     // Start playing all audio files
     audioElements.forEach(audio => {
         audio.play().catch(err => {
@@ -607,7 +607,8 @@ function playCellMedia(cell) {
             audio.onerror();
         });
     });
-  });
+    // ❌ REMOVED: }); ← Don't close here!
+  });  // ← Only close after complete() runs
 }
 
 
