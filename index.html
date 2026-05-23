@@ -6,6 +6,245 @@
 
   <title>Speech Table System</title>
   <style>
+/* ========== AI MODULE STYLES ========== */
+
+/* Activate Button (shows on load) */
+.ai-activate {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 15px 30px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.5);
+  z-index: 999;
+  transition: all 0.3s;
+}
+.ai-activate:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 30px rgba(102, 126, 234, 0.6);
+}
+.ai-activate.loading {
+  background: #ffc107;
+  cursor: wait;
+}
+.ai-activate.loaded {
+  background: #28a745;
+}
+
+/* Toggle Button (hidden until AI loads) */
+.ai-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  z-index: 999;
+  display: none;
+  transition: transform 0.2s;
+}
+.ai-toggle.active { display: block; }
+.ai-toggle:hover { transform: scale(1.05); }
+
+/* AI Panel (sidebar) */
+.ai-panel {
+  position: fixed;
+  top: 0;
+  right: -400px;
+  width: 380px;
+  height: 100vh;
+  background: white;
+  box-shadow: -5px 0 25px rgba(0,0,0,0.2);
+  z-index: 1000;
+  transition: right 0.3s ease;
+  overflow-y: auto;
+}
+.ai-panel.active { right: 0; }
+
+.ai-panel-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.ai-panel-header h3 { margin: 0; }
+.ai-close {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+}
+
+.ai-panel-body {
+  padding: 20px;
+}
+
+/* Command Box */
+.ai-command-box {
+  margin-bottom: 20px;
+}
+.ai-command-box label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: bold;
+  color: #667eea;
+  font-size: 15px;
+}
+.ai-command-box textarea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  resize: vertical;
+  transition: border-color 0.3s;
+  box-sizing: border-box;
+}
+.ai-command-box textarea:focus {
+  outline: none;
+  border-color: #667eea;
+}
+.ai-command-box button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s;
+  font-size: 14px;
+}
+.ai-command-box button:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+.ai-command-box button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+.ai-command-status {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f0f4ff;
+  border-left: 4px solid #667eea;
+  border-radius: 5px;
+  font-size: 13px;
+  color: #555;
+  display: none;
+}
+.ai-command-status.active {
+  display: block;
+}
+
+/* Progress Display */
+.ai-progress {
+  margin: 20px 0;
+  padding: 15px;
+  background: #f0f4ff;
+  border-radius: 8px;
+  display: none;
+}
+.ai-progress.active { display: block; }
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  width: 0%;
+  transition: width 0.3s;
+}
+
+#aiProgressText {
+  font-size: 13px;
+  color: #667eea;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+#aiCurrentCell {
+  font-size: 12px;
+  color: #888;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Status Box */
+.ai-status {
+  padding: 12px;
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+  border-radius: 5px;
+  font-size: 13px;
+  margin-bottom: 15px;
+}
+
+/* Stop Button */
+.ai-stop {
+  width: 100%;
+  padding: 12px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 14px;
+}
+.ai-stop:hover { background: #c82333; }
+
+/* Cell Animations */
+.cell-processing {
+  background: #fff3cd !important;
+  animation: pulse 1s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.cell-completed {
+  background: #d4edda !important;
+  animation: flash 0.5s;
+}
+@keyframes flash {
+  0% { background: #28a745; }
+  100% { background: #d4edda; }
+}
+
+
+
+
+    
     *{box-sizing:border-box;}
     body{margin:0;font-family:sans-serif;background:#f1f3f4;color:#202124;overflow:auto;}
     header{height:56px;background:#fff;border-bottom:1px solid #dadce0;display:flex;align-items:center;gap:10px;padding:0 14px;position:sticky;top:0;z-index:1000;}
@@ -158,6 +397,54 @@ td:nth-child(even) .col-select option {
   <button onclick="stopReading()">Stop</button>
   <button id="openFinder">Frequency Finder</button>
 <button id="openTabler" class="nav-btn">⊞ Tabler</button>
+
+  
+  <!-- AI ACTIVATE BUTTON -->
+<button id="aiActivate" class="ai-activate">🚀 Turn On AI</button>
+<!-- AI TOGGLE BUTTON (hidden until loaded) -->
+<button id="aiToggle" class="ai-toggle">🤖 AI Assistant</button>
+<!-- AI PANEL -->
+<div id="aiPanel" class="ai-panel">
+  <div class="ai-panel-header">
+    <h3>🤖 AI Assistant</h3>
+    <button id="aiClose" class="ai-close">✕</button>
+  </div>
+  
+  <div class="ai-panel-body">
+    <!-- Command Input -->
+    <div class="ai-command-box">
+      <label>💬 Tell me what to do:</label>
+      <textarea 
+        id="aiCommand" 
+        placeholder="Examples:
+• Translate column A to Spanish in column B
+• Summarize column C into column D
+• Fix grammar in column A, put in B
+• Detect sentiment in column E
+
+Press Ctrl+Enter to run"
+        rows="5"
+      ></textarea>
+      <button id="aiExecute" disabled>▶ Execute Command</button>
+      <div id="aiCommandStatus" class="ai-command-status"></div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div id="aiProgress" class="ai-progress">
+      <div class="progress-bar">
+        <div id="aiProgressFill" class="progress-fill"></div>
+      </div>
+      <div id="aiProgressText">Ready</div>
+      <div id="aiCurrentCell"></div>
+    </div>
+
+    <!-- Status Display -->
+    <div id="aiStatus" class="ai-status">Click "Turn On AI" button to load models</div>
+    
+    <!-- Stop Button -->
+    <button id="aiStop" class="ai-stop" style="display:none">⏹ Stop Processing</button>
+  </div>
+</div>
   
   
 <div style="display:flex; gap:10px; align-items:center; margin:10px 0;">
@@ -419,6 +706,16 @@ td:nth-child(even) .col-select option {
     const box = document.getElementById("uploadBox");
     box.style.display = box.style.display === "none" || box.style.display === "" ? "block" : "none";
   };
+</script>
+
+
+  <script type="module">
+  import { SpreadsheetAI } from './ai-module.js';
+
+  // IMPORTANT: Replace 'myTable' with YOUR table's ID
+  const myTable = document.getElementById('myTable'); // ← CHANGE THIS
+  
+  const ai = new SpreadsheetAI(myTable);
 </script>
 
 
