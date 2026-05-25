@@ -710,12 +710,15 @@ box.style.display = box.style.display === "none" || box.style.display === "" ? "
 
 
   <script type="module">
-  import { SpreadsheetAI } from './ai-module.js';
+import { SpreadsheetAI } from './ai-module.js';
 
-  // IMPORTANT: Replace 'myTable' with YOUR table's ID
-  const myTable = document.getElementById('sheet'); // ← CHANGE THIS
-  
-  const ai = new SpreadsheetAI(myTable);
+const myTable = document.getElementById('sheet');
+
+if (myTable) {
+  window.ai = new SpreadsheetAI(myTable);
+} else {
+  console.error('Sheet table not found');
+}
 </script>
 
 
