@@ -1,5 +1,6 @@
-// ai-module.js - Fully harmonized for your spreadsheet
-// Zero crashes, zero leaks, 100% compatible, Bergamot powered
+// ALL IMPORTS AT TOP OF FILE - THIS IS MANDATORY FOR BROWSERS
+import * as bergamot from 'https://esm.sh/bergamot-translator@0.6.2';
+import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.2.1';
 
 export class SpreadsheetAI {
 constructor(tableElement) {
@@ -95,23 +96,20 @@ async init() {
 try {
 this.setStatus('⏳ Loading translator (75MB, first time only)...');
 
-await import('https://unpkg.com/bergamot-translator@0.6.2/dist/bergamot.es.js');
-
-this.translator = await globalThis.bergamot.loadTranslator({
+this.translator = await bergamot.loadTranslator({
     downloadProgress: (pct) => {
         pct = Math.round(pct);
         this.setStatus(`⏳ Translator: ${pct}%`);
         document.getElementById('aiActivate').textContent = `⏳ \({pct}%`;
     }
 });
+
+// Optional: Uncomment these 2 lines if you want summarize / grammar / sentiment
+// this.setStatus('⏳ Loading text AI (180MB)...');
+// this.ai = await pipeline('text2text-generation', 'Xenova/LaMini-Flan-T5-248M', { cache_policy: 'on_demand' });
   
-  this.setStatus('⏳ Loading text AI (180MB)...');
-  
-  import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.2.1';
-  this.ai = await pipeline('text2text-generation', 'Xenova/LaMini-Flan-T5-248M', { cache_policy: 'on_demand' });
-  
-  this.setStatus('✅ AI ready! Type a command above.');
-  document.getElementById('aiExecute').disabled = false;
+this.setStatus('✅ AI ready! Type a command above.');
+document.getElementById('aiExecute').disabled = false;
   
 } catch (err) {
   this.setStatus('❌ Failed: ' + err.message);
@@ -148,9 +146,6 @@ this.stopBtn.style.display = 'none';
 }, 1500);
 }
 
-// --------------------------
-// PERFECTLY ALIGNED FOR YOUR TABLE LAYOUT
-// --------------------------
 getCellText(colIndex, rowIndex) {
 const row = this.table.rows[rowIndex];
 if (!row) return '';
@@ -162,7 +157,6 @@ return cell ? cell.textContent.trim() : '';
 setCellText(colIndex, rowIndex, value) {
 const row = this.table.rows[rowIndex];
 if (!row) return;
-// +1 OFFSET TO SKIP ROW NUMBER COLUMN
 const cell = row.cells[colIndex + 1];
 if (cell) cell.textContent = value;
 }
@@ -207,7 +201,7 @@ if (cmd.includes('translate')) {
     }
   }
 
-  // Special new command: translate column A to all active languages
+  // Special command: translate column A to all active languages
   if(columns.length === 1) {
     return {
       action: 'translate_all',
@@ -362,6 +356,11 @@ this.isRunning = false;
 
 async processAICommand(fromCol, toCol, action) {
 if (this.isRunning) return;
+
+if(!this.ai) {
+  this.commandStatus.textContent = '⚠️ This feature is currently disabled';
+  return;
+}
 
 const prompts = {
   summarize: (t) => `Summarize in one short sentence: \){t}`,
