@@ -91,34 +91,36 @@ export class SpreadsheetAI {
   }
 
   // ⚠️ ADJUST THESE TO YOUR TABLE STRUCTURE (you said you'll provide the HTML)
-  getCellText(colIndex, rowIndex) {
-    const row = this.table.rows[rowIndex];
-    if (!row) return '';
-    const cell = row.cells[colIndex];   // default: direct column index
-    return cell ? cell.textContent.trim() : '';
-  }
+getCellText(colIndex, rowIndex) {
+  const row = this.table.rows[rowIndex];
+  if (!row) return '';
+  const cell = row.cells[colIndex];   // ← wrong for your layout
+  return cell ? cell.textContent.trim() : '';
+}
 
-  setCellText(colIndex, rowIndex, value) {
-    const row = this.table.rows[rowIndex];
-    if (!row) return;
-    const cell = row.cells[colIndex];
-    if (cell) cell.textContent = value;
-  }
+  
+// Corrected – column A is at cells[colIndex+1]
+getCellText(colIndex, rowIndex) {
+  const row = this.table.rows[rowIndex];
+  if (!row) return '';
+  const cell = row.cells[colIndex + 1];  // +1 skip row number column
+  return cell ? cell.textContent.trim() : '';
+}
 
-  markCell(colIndex, rowIndex, processing) {
-    const row = this.table.rows[rowIndex];
-    if (!row) return;
-    const cell = row.cells[colIndex];
-    if (!cell) return;
+setCellText(colIndex, rowIndex, value) {
+  const row = this.table.rows[rowIndex];
+  if (!row) return;
+  const cell = row.cells[colIndex + 1];
+  if (cell) cell.textContent = value;
+}
 
-    if (processing) {
-      cell.classList.add('cell-processing');
-    } else {
-      cell.classList.remove('cell-processing');
-      cell.classList.add('cell-completed');
-      setTimeout(() => cell.classList.remove('cell-completed'), 500);
-    }
-  }
+markCell(colIndex, rowIndex, processing) {
+  const row = this.table.rows[rowIndex];
+  if (!row) return;
+  const cell = row.cells[colIndex + 1];
+  if (!cell) return;
+  // ... rest stays the same
+}
 
   parseCommand(command) {
     const cmd = command.toLowerCase().trim();
@@ -213,7 +215,7 @@ export class SpreadsheetAI {
     const tasks = [];
     const rowCount = this.table.rows.length;
 
-    for (let r = 1; r < rowCount; r++) {   // assumes row 0 is header – adjust if needed
+    for (let r = 2; r < rowCount; r++) {   // assumes row 0 is header – adjust if needed
       const text = this.getCellText(fromCol, r);
       if (text) tasks.push({ row: r, text });
     }
