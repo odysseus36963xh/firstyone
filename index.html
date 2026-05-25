@@ -763,18 +763,361 @@ window.toggleReader = function () {
 
 <script src="script.js"></script>
 
-<script type="module">
-  import { SpreadsheetAI } from './ai-module.js';
+<script>
+// ===============================
+// AI MODULE — INLINE (no import/export)
+// ===============================
 
-  // Wait until the DOM is fully built (including the table)
-  window.addEventListener('DOMContentLoaded', () => {
-    const myTable = document.getElementById('sheet');
-    if (myTable) {
-      const ai = new SpreadsheetAI(myTable);
-    } else {
-      console.error('Table not found!');
+class SpreadsheetAI {
+  constructor(tableElement) {
+    this.table = tableElement;
+    this.isRunning = false;
+    this.stopRequested = false;
+    this.LIBRETRANSLATE_URL = 'http://localhost:5000';
+    this.init();
+  }
+
+  init() {
+    this.statusEl = document.getElementById('aiStatus');
+    this.progressEl = document.getElementById('aiProgress');
+    this.progressFill = document.getElementById('aiProgressFill');
+    this.progressText = document.getElementById('aiProgressText');
+    this.currentCellEl = document.getElementById('aiCurrentCell');
+    this.stopBtn = document.getElementById('aiStop');
+    this.commandStatus = document.getElementById('aiCommandStatus');
+    this.executeBtn = document.getElementById('aiExecute');
+    this.commandInput = document.getElementById('aiCommand');
+    this.activateBtn = document.getElementById('aiActivate');
+    this.toggleBtn = document.getElementById('aiToggle');
+    this.closeBtn = document.getElementById('aiClose');
+    this.panel = document.getElementById('aiPanel');
+
+    console.log('🤖 AI Module loading...');
+    console.log('  table:', !!this.table);
+    console.log('  panel:', !!this.panel);
+    console.log('  execute:', !!this.executeBtn);
+    console.log('  command:', !!this.commandInput);
+
+    if (!this.executeBtn || !this.commandInput) {
+      console.error('❌ Critical AI elements missing!');
+      return;
     }
-  });
+
+    this.setupButtons();
+    this.setStatus('✅ AI Ready — type a command below');
+    console.log('🤖 AI Module loaded OK');
+  }
+
+  setupButtons() {
+    const self = this;
+
+    if (this.activateBtn) {
+      this.activateBtn.onclick = function() {
+        self.panel.classList.add('active');
+      };
+    }
+
+    if (this.toggleBtn) {
+      this.toggleBtn.onclick = function() {
+        self.panel.classList.toggle('active');
+      };
+    }
+
+    if (this.closeBtn) {
+      this.closeBtn.onclick = function() {
+        self.panel.classList.remove('active');
+      };
+    }
+
+    if (this.executeBtn) {
+      this.executeBtn.disabled = false;
+      this.executeBtn.onclick = function() {
+        self.executeCommand();
+      };
+    }
+
+    if (this.commandInput) {
+      this.commandInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          self.executeCommand();
+        }
+      });
+    }
+
+    if (this.stopBtn) {
+      this.stopBtn.onclick = function() {
+        self.stopRequested = true;
+        if (self.progressText) self.progressText.textContent = '⏹ Stopping...';
+      };
+    }
+  }
+
+  setStatus(msg) {
+    if (this.statusEl) this.statusEl.textContent = msg;
+    console.log('STATUS:', msg);
+  }
+
+  setCommandStatus(msg) {
+    if (this.commandStatus) {
+      this.commandStatus.classList.add('active');
+      this.commandStatus.textContent = msg;
+    }
+    console.log('CMD:', msg);
+  }
+
+  showProgress(action) {
+    if (this.progressEl) this.progressEl.classList.add('active');
+    if (this.progressText) this.progressText.textContent = action;
+    if (this.progressFill) this.progressFill.style.width = '0%';
+    if (this.stopBtn) this.stopBtn.style.display = 'block';
+  }
+
+  updateProgress(done, total, cellText, rowNum) {
+    var pct = Math.round((done / total) * 100);
+    if (this.progressFill) this.progressFill.style.width = pct + '%';
+    if (this.progressText) this.progressText.textContent =
+      'Row ' + rowNum + ' • ' + done + '/' + total + ' (' + pct + '%)';
+    if (this.currentCellEl) this.currentCellEl.textContent =
+      cellText.length > 50 ? cellText.substring(0, 50) + '...' : cellText;
+  }
+
+  hideProgress() {
+    var self = this;
+    setTimeout(function() {
+      if (self.progressEl) self.progressEl.classList.remove('active');
+      if (self.stopBtn) self.stopBtn.style.display = 'none';
+    }, 1500);
+  }
+
+  // ---- CELL ACCESS (your table: row 0=headers, row 1=selectors, row 2+=data) ----
+
+  getCellText(colIndex, rowIndex) {
+    var row = this.table.rows[rowIndex];
+    if (!row) return '';
+    var cell = row.cells[colIndex + 1]; // +1 skip row-number
+    return cell ? cell.textContent.trim() : '';
+  }
+
+  setCellText(colIndex, rowIndex, value) {
+    var row = this.table.rows[rowIndex];
+    if (!row) return;
+    var cell = row.cells[colIndex + 1];
+    if (cell) cell.textContent = value;
+  }
+
+  markCell(colIndex, rowIndex, processing) {
+    var row = this.table.rows[rowIndex];
+    if (!row) return;
+    var cell = row.cells[colIndex + 1];
+    if (!cell) return;
+    if (processing) {
+      cell.style.background = '#fff3cd';
+      cell.style.opacity = '0.6';
+    } else {
+      cell.style.background = '';
+      cell.style.opacity = '1';
+    }
+  }
+
+  // ---- COMMAND PARSER ----
+
+  parseCommand(command) {
+    var cmd = command.toLowerCase().trim();
+    console.log('Parsing:', cmd);
+
+    // Extract column letters
+    var columnRegex = /column\s+([a-z])/gi;
+    var columns = [];
+    var match;
+    while ((match = columnRegex.exec(cmd)) !== null) {
+      columns.push(match[1].toUpperCase());
+    }
+    console.log('Columns found:', columns);
+
+    if (!cmd.includes('translate')) {
+      return { error: 'Unknown command. Try: translate column A to column B in spanish' };
+    }
+
+    var languages = {
+      'english': 'en', 'spanish': 'es', 'french': 'fr',
+      'german': 'de', 'italian': 'it', 'portuguese': 'pt',
+      'dutch': 'nl', 'chinese': 'zh', 'japanese': 'ja',
+      'korean': 'ko', 'arabic': 'ar', 'russian': 'ru', 'hindi': 'hi'
+    };
+
+    var targetLang = null;
+    for (var lang in languages) {
+      if (cmd.includes(lang)) {
+        targetLang = languages[lang];
+        break;
+      }
+    }
+
+    if (!targetLang) {
+      return { error: 'Please specify a language (spanish, french, german, italian...)' };
+    }
+    if (columns.length < 2) {
+      return { error: 'Please specify two columns. Example: translate column A to column B in spanish' };
+    }
+
+    var result = {
+      action: 'translate',
+      fromCol: columns[0].charCodeAt(0) - 65,
+      toCol: columns[1].charCodeAt(0) - 65,
+      targetLang: targetLang
+    };
+    console.log('Parsed:', result);
+    return result;
+  }
+
+  // ---- EXECUTE ----
+
+  async executeCommand() {
+    var cmd = this.commandInput.value.trim();
+    if (!cmd) {
+      this.setCommandStatus('❌ Type a command first');
+      return;
+    }
+
+    console.log('=== EXECUTING ===');
+    console.log('Command:', cmd);
+
+    this.setCommandStatus('🤔 Understanding command...');
+    var parsed = this.parseCommand(cmd);
+
+    if (parsed.error) {
+      this.setCommandStatus('❌ ' + parsed.error);
+      return;
+    }
+
+    var from = String.fromCharCode(65 + parsed.fromCol);
+    var to = String.fromCharCode(65 + parsed.toCol);
+    this.setCommandStatus('✅ Translating column ' + from + ' → ' + to + ' (' + parsed.targetLang + ')');
+
+    await this.delay(500);
+    await this.translateColumn(parsed.fromCol, parsed.toCol, parsed.targetLang);
+  }
+
+  // ---- TRANSLATE ----
+
+  async translateColumn(fromCol, toCol, targetLang) {
+    if (this.isRunning) {
+      console.log('Already running!');
+      return;
+    }
+
+    var tasks = [];
+    var rowCount = this.table.rows.length;
+    console.log('Scanning rows 2 to ' + (rowCount - 1) + '...');
+
+    for (var r = 2; r < rowCount; r++) {
+      var text = this.getCellText(fromCol, r);
+      if (text && text.length > 0) {
+        tasks.push({ row: r, text: text });
+      }
+    }
+
+    console.log('Found ' + tasks.length + ' cells with text');
+
+    if (!tasks.length) {
+      this.setCommandStatus('⚠️ No text found in column ' + String.fromCharCode(65 + fromCol));
+      return;
+    }
+
+    this.isRunning = true;
+    this.stopRequested = false;
+    this.showProgress('Translating ' + tasks.length + ' cells...');
+
+    var done = 0;
+    var errors = 0;
+    var self = this;
+
+    for (var i = 0; i < tasks.length; i++) {
+      if (self.stopRequested) break;
+
+      var task = tasks[i];
+      self.markCell(toCol, task.row, true);
+      self.setCellText(toCol, task.row, '⏳...');
+      self.updateProgress(done, tasks.length, task.text, task.row);
+
+      try {
+        var translated = await self.callLibreTranslate(task.text, 'auto', targetLang);
+        self.setCellText(toCol, task.row, translated);
+        console.log('✅ ' + task.text + ' → ' + translated);
+      } catch (err) {
+        console.error('❌ Error:', err.message);
+        self.setCellText(toCol, task.row, '❌ ' + err.message);
+        errors++;
+      }
+
+      self.markCell(toCol, task.row, false);
+      done++;
+
+      await self.delay(150);
+    }
+
+    var msg;
+    if (self.stopRequested) {
+      msg = '⏹ Stopped (' + done + '/' + tasks.length + ')';
+    } else if (errors > 0) {
+      msg = '⚠️ Done: ' + (done - errors) + ' translated, ' + errors + ' errors';
+    } else {
+      msg = '✅ Done! Translated ' + done + ' cells';
+    }
+
+    self.setStatus(msg);
+    self.setCommandStatus(msg);
+    self.hideProgress();
+    self.isRunning = false;
+  }
+
+  // ---- API CALL ----
+
+  async callLibreTranslate(text, source, target) {
+    var url = this.LIBRETRANSLATE_URL + '/translate';
+    console.log('API: ' + url + ' | ' + source + ' → ' + target);
+
+    var response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        q: text,
+        source: source,
+        target: target,
+        format: 'text'
+      })
+    });
+
+    if (!response.ok) {
+      var errText = await response.text();
+      throw new Error('HTTP ' + response.status + ': ' + errText);
+    }
+
+    var data = await response.json();
+
+    if (!data.translatedText) {
+      throw new Error('No translation returned');
+    }
+
+    return data.translatedText.trim();
+  }
+
+  delay(ms) {
+    return new Promise(function(resolve) { setTimeout(resolve, ms); });
+  }
+}
+
+// ===============================
+// INIT — runs AFTER table is built
+// ===============================
+var aiTable = document.getElementById('sheet');
+if (aiTable) {
+  console.log('✅ Table found, starting AI');
+  new SpreadsheetAI(aiTable);
+} else {
+  console.error('❌ Table #sheet not found!');
+}
 </script>
 
 
