@@ -90,7 +90,7 @@ export class SpreadsheetAI {
     }, 1500);
   }
 
-  // ⚠️ ADJUST THESE TO YOUR TABLE STRUCTURE (you said you'll provide the HTML)
+ // Original (line 132ish)
 getCellText(colIndex, rowIndex) {
   const row = this.table.rows[rowIndex];
   if (!row) return '';
@@ -98,7 +98,6 @@ getCellText(colIndex, rowIndex) {
   return cell ? cell.textContent.trim() : '';
 }
 
-  
 // Corrected – column A is at cells[colIndex+1]
 getCellText(colIndex, rowIndex) {
   const row = this.table.rows[rowIndex];
@@ -122,6 +121,7 @@ markCell(colIndex, rowIndex, processing) {
   // ... rest stays the same
 }
 
+  
   parseCommand(command) {
     const cmd = command.toLowerCase().trim();
 
