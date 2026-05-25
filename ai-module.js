@@ -8,66 +8,150 @@ export class SpreadsheetAI {
 
     this.abortController = null;
 
-    this.apiUrl = 'https://libretranslate.de/translate';
-
     this.initializeUI();
   }
 
   initializeUI() {
 
-    this.activateBtn = document.getElementById('aiActivate');
-    this.toggleBtn = document.getElementById('aiToggle');
-    this.panel = document.getElementById('aiPanel');
-    this.closeBtn = document.getElementById('aiClose');
+    this.activateBtn =
+      document.getElementById('aiActivate');
 
-    this.commandInput = document.getElementById('aiCommand');
-    this.executeBtn = document.getElementById('aiExecute');
+    this.toggleBtn =
+      document.getElementById('aiToggle');
 
-    this.statusBox = document.getElementById('aiStatus');
+    this.panel =
+      document.getElementById('aiPanel');
 
-    this.progressBox = document.getElementById('aiProgress');
-    this.progressFill = document.getElementById('aiProgressFill');
-    this.progressText = document.getElementById('aiProgressText');
-    this.currentCell = document.getElementById('aiCurrentCell');
+    this.closeBtn =
+      document.getElementById('aiClose');
 
-    this.stopBtn = document.getElementById('aiStop');
+    this.commandInput =
+      document.getElementById('aiCommand');
+
+    this.executeBtn =
+      document.getElementById('aiExecute');
+
+    this.statusBox =
+      document.getElementById('aiStatus');
+
+    this.progressBox =
+      document.getElementById('aiProgress');
+
+    this.progressFill =
+      document.getElementById('aiProgressFill');
+
+    this.progressText =
+      document.getElementById('aiProgressText');
+
+    this.currentCell =
+      document.getElementById('aiCurrentCell');
+
+    this.stopBtn =
+      document.getElementById('aiStop');
 
     this.bindEvents();
   }
 
   bindEvents() {
 
-    this.activateBtn.addEventListener('click', async () => {
-      await this.activateAI();
-    });
+    if (this.activateBtn) {
 
-    this.toggleBtn.addEventListener('click', () => {
-      this.panel.classList.toggle('active');
-    });
+      this.activateBtn.addEventListener(
+        'click',
+        async () => {
 
-    this.closeBtn.addEventListener('click', () => {
-      this.panel.classList.remove('active');
-    });
+          await this.activateAI();
 
-    this.commandInput.addEventListener('input', () => {
-      this.executeBtn.disabled = !this.commandInput.value.trim();
-    });
+        }
+      );
 
-    this.commandInput.addEventListener('keydown', (e) => {
+    }
 
-      if (e.ctrlKey && e.key === 'Enter') {
-        this.executeCommand();
-      }
+    if (this.toggleBtn) {
 
-    });
+      this.toggleBtn.addEventListener(
+        'click',
+        () => {
 
-    this.executeBtn.addEventListener('click', () => {
-      this.executeCommand();
-    });
+          this.panel.classList.toggle(
+            'active'
+          );
 
-    this.stopBtn.addEventListener('click', () => {
-      this.stopProcessing();
-    });
+        }
+      );
+
+    }
+
+    if (this.closeBtn) {
+
+      this.closeBtn.addEventListener(
+        'click',
+        () => {
+
+          this.panel.classList.remove(
+            'active'
+          );
+
+        }
+      );
+
+    }
+
+    if (this.commandInput) {
+
+      this.commandInput.addEventListener(
+        'input',
+        () => {
+
+          this.executeBtn.disabled =
+            !this.commandInput.value.trim();
+
+        }
+      );
+
+      this.commandInput.addEventListener(
+        'keydown',
+        (e) => {
+
+          if (
+            e.ctrlKey &&
+            e.key === 'Enter'
+          ) {
+
+            this.executeCommand();
+
+          }
+
+        }
+      );
+
+    }
+
+    if (this.executeBtn) {
+
+      this.executeBtn.addEventListener(
+        'click',
+        () => {
+
+          this.executeCommand();
+
+        }
+      );
+
+    }
+
+    if (this.stopBtn) {
+
+      this.stopBtn.addEventListener(
+        'click',
+        () => {
+
+          this.stopProcessing();
+
+        }
+      );
+
+    }
 
   }
 
@@ -75,62 +159,91 @@ export class SpreadsheetAI {
 
     try {
 
-      this.activateBtn.classList.add('loading');
+      if (this.activateBtn) {
 
-      this.activateBtn.textContent = 'Loading...';
+        this.activateBtn.textContent =
+          'Connecting...';
 
-      await this.translateText('hello', 'en', 'es');
+      }
 
-      this.activateBtn.classList.remove('loading');
+      await this.translateText(
+        'hello',
+        'en',
+        'es'
+      );
 
-      this.activateBtn.classList.add('loaded');
+      if (this.activateBtn) {
 
-      this.activateBtn.textContent = 'AI Ready';
+        this.activateBtn.textContent =
+          'AI Ready';
 
-      this.toggleBtn.classList.add('active');
+      }
 
-      this.executeBtn.disabled = false;
+      if (this.executeBtn) {
 
-      this.setStatus('LibreTranslate connected');
+        this.executeBtn.disabled =
+          false;
+
+      }
+
+      this.setStatus(
+        'Translator connected'
+      );
 
     } catch (err) {
 
       console.error(err);
 
-      this.activateBtn.classList.remove('loading');
-
-      this.activateBtn.textContent = 'Retry AI';
-
-      this.setStatus('Connection failed');
+      this.setStatus(
+        'Connection failed'
+      );
 
     }
 
   }
 
   setStatus(text) {
-    this.statusBox.textContent = text;
+
+    if (this.statusBox) {
+
+      this.statusBox.textContent =
+        text;
+
+    }
+
   }
 
   async executeCommand() {
 
     const command =
-      this.commandInput.value.trim().toLowerCase();
+      this.commandInput.value
+        .trim()
+        .toLowerCase();
 
     if (!command) return;
 
     if (this.isProcessing) {
+
       alert('Already processing');
-      return;
-    }
-
-    if (command.includes('translate')) {
-
-      await this.handleTranslate(command);
 
       return;
     }
 
-    this.setStatus('Unknown command');
+    if (
+      command.includes('translate')
+    ) {
+
+      await this.handleTranslate(
+        command
+      );
+
+      return;
+    }
+
+    this.setStatus(
+      'Unknown command'
+    );
+
   }
 
   async handleTranslate(command) {
@@ -149,11 +262,14 @@ export class SpreadsheetAI {
       return;
     }
 
-    const sourceColumn = match[1].toUpperCase();
+    const sourceColumn =
+      match[1].toUpperCase();
 
-    const targetLang = match[2].toLowerCase();
+    const targetLang =
+      match[2].toLowerCase();
 
-    const targetColumn = match[3].toUpperCase();
+    const targetColumn =
+      match[3].toUpperCase();
 
     await this.translateColumn(
       sourceColumn,
@@ -171,28 +287,49 @@ export class SpreadsheetAI {
 
     this.isProcessing = true;
 
-    this.abortController = new AbortController();
+    if (this.progressBox) {
 
-    this.progressBox.classList.add('active');
+      this.progressBox.classList.add(
+        'active'
+      );
 
-    this.stopBtn.style.display = 'block';
+    }
+
+    if (this.stopBtn) {
+
+      this.stopBtn.style.display =
+        'block';
+
+    }
 
     try {
 
       const sourceIndex =
-        this.columnLetterToIndex(sourceCol);
+        this.columnLetterToIndex(
+          sourceCol
+        );
 
       const targetIndex =
-        this.columnLetterToIndex(targetCol);
+        this.columnLetterToIndex(
+          targetCol
+        );
 
       const rows =
-        Array.from(this.table.rows).slice(2);
+        Array.from(
+          this.table.rows
+        ).slice(2);
 
       let completed = 0;
 
-      for (let i = 0; i < rows.length; i++) {
+      for (
+        let i = 0;
+        i < rows.length;
+        i++
+      ) {
 
-        if (!this.isProcessing) break;
+        if (!this.isProcessing) {
+          break;
+        }
 
         const row = rows[i];
 
@@ -202,7 +339,10 @@ export class SpreadsheetAI {
         const targetCell =
           row.cells[targetIndex + 1];
 
-        if (!sourceCell || !targetCell) {
+        if (
+          !sourceCell ||
+          !targetCell
+        ) {
           continue;
         }
 
@@ -217,12 +357,16 @@ export class SpreadsheetAI {
           'cell-processing'
         );
 
-        this.currentCell.textContent =
-          sourceCol +
-          (i + 1) +
-          ' to ' +
-          targetCol +
-          (i + 1);
+        if (this.currentCell) {
+
+          this.currentCell.textContent =
+            sourceCol +
+            (i + 1) +
+            ' to ' +
+            targetCol +
+            (i + 1);
+
+        }
 
         try {
 
@@ -233,7 +377,8 @@ export class SpreadsheetAI {
               targetLang
             );
 
-          targetCell.innerText = translated;
+          targetCell.innerText =
+            translated;
 
           sourceCell.classList.remove(
             'cell-processing'
@@ -247,7 +392,8 @@ export class SpreadsheetAI {
 
           console.error(err);
 
-          targetCell.innerText = '[ERROR]';
+          targetCell.innerText =
+            '[ERROR]';
 
         }
 
@@ -255,16 +401,27 @@ export class SpreadsheetAI {
 
         const percent =
           Math.floor(
-            (completed / rows.length) * 100
+            (
+              completed /
+              rows.length
+            ) * 100
           );
 
-        this.progressFill.style.width =
-          percent + '%';
+        if (this.progressFill) {
 
-        this.progressText.textContent =
-          percent + '% Complete';
+          this.progressFill.style.width =
+            percent + '%';
 
-        await this.sleep(30);
+        }
+
+        if (this.progressText) {
+
+          this.progressText.textContent =
+            percent + '% Complete';
+
+        }
+
+        await this.sleep(50);
 
       }
 
@@ -292,35 +449,40 @@ export class SpreadsheetAI {
     target
   ) {
 
-    const response = await fetch(
-      this.apiUrl,
-      {
-        method: 'POST',
+    const response =
+      await fetch(
+        'https://translate.argosopentech.com/translate',
+        {
+          method: 'POST',
 
-        headers: {
-          'Content-Type': 'application/json'
-        },
+          headers: {
+            'Content-Type':
+              'application/json'
+          },
 
-        body: JSON.stringify({
-          q: text,
-          source: source,
-          target: target,
-          format: 'text'
-        })
-      }
-    );
+          body: JSON.stringify({
+            q: text,
+            source: source,
+            target: target,
+            format: 'text'
+          })
+        }
+      );
 
     if (!response.ok) {
 
       throw new Error(
-        'LibreTranslate request failed'
+        'Translation request failed'
       );
 
     }
 
-    const data = await response.json();
+    const data =
+      await response.json();
 
-    return data.translatedText;
+    return (
+      data.translatedText || ''
+    );
 
   }
 
@@ -328,11 +490,9 @@ export class SpreadsheetAI {
 
     this.isProcessing = false;
 
-    if (this.abortController) {
-      this.abortController.abort();
-    }
-
-    this.setStatus('Processing stopped');
+    this.setStatus(
+      'Processing stopped'
+    );
 
     this.finishProcessing();
 
@@ -342,15 +502,29 @@ export class SpreadsheetAI {
 
     this.isProcessing = false;
 
-    this.stopBtn.style.display = 'none';
+    if (this.stopBtn) {
+
+      this.stopBtn.style.display =
+        'none';
+
+    }
 
     setTimeout(() => {
 
-      this.progressBox.classList.remove(
-        'active'
-      );
+      if (this.progressBox) {
 
-      this.progressFill.style.width = '0%';
+        this.progressBox.classList.remove(
+          'active'
+        );
+
+      }
+
+      if (this.progressFill) {
+
+        this.progressFill.style.width =
+          '0%';
+
+      }
 
     }, 1000);
 
@@ -358,14 +532,17 @@ export class SpreadsheetAI {
 
   columnLetterToIndex(letter) {
 
-    return letter.charCodeAt(0) - 65;
+    return (
+      letter.charCodeAt(0) - 65
+    );
 
   }
 
   sleep(ms) {
 
-    return new Promise(resolve =>
-      setTimeout(resolve, ms)
+    return new Promise(
+      resolve =>
+        setTimeout(resolve, ms)
     );
 
   }
