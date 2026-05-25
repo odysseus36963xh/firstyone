@@ -761,11 +761,42 @@ window.toggleReader = function () {
 </script>
 
 
-<script src="script.js"></script>
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+  
+
+<script src="translator.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
 <script>
 class SpreadsheetAI {
 
@@ -773,37 +804,31 @@ class SpreadsheetAI {
 
     this.table = tableElement;
 
-    this.translator = null;
-
     this.isRunning = false;
-
     this.stopRequested = false;
-
     this.isLoaded = false;
 
     this.statusEl = document.getElementById('aiStatus');
     this.progressEl = document.getElementById('aiProgress');
     this.progressFill = document.getElementById('aiProgressFill');
     this.progressText = document.getElementById('aiProgressText');
-    this.currentCellEl = document.getElementById('aiCurrentCell');
-    this.stopBtn = document.getElementById('aiStop');
     this.commandStatus = document.getElementById('aiCommandStatus');
+
     this.executeBtn = document.getElementById('aiExecute');
     this.commandInput = document.getElementById('aiCommand');
+
     this.activateBtn = document.getElementById('aiActivate');
     this.toggleBtn = document.getElementById('aiToggle');
     this.closeBtn = document.getElementById('aiClose');
     this.panel = document.getElementById('aiPanel');
 
     this.languageMap = {
-
       english:'en',
       spanish:'es',
       french:'fr',
       german:'de',
       italian:'it',
       portuguese:'pt',
-
       en:'en',
       es:'es',
       fr:'fr',
@@ -831,85 +856,27 @@ class SpreadsheetAI {
       this.executeCommand();
     };
 
-    this.stopBtn.onclick = () => {
-      this.stopRequested = true;
-    };
-
-    this.commandInput.addEventListener('keydown', (e) => {
-
-      if (e.ctrlKey && e.key === 'Enter') {
-
-        e.preventDefault();
-
-        this.executeCommand();
-      }
-    });
-
     this.setStatus('Click Turn On AI');
   }
 
   async activateAI() {
 
-    if (this.isLoaded) {
+    this.isLoaded = true;
 
-      this.panel.classList.add('active');
+    this.activateBtn.innerText = 'AI Ready';
 
-      return;
-    }
+    this.activateBtn.style.background = '#28a745';
 
-    this.activateBtn.innerText = 'Loading Translator...';
+    this.toggleBtn.classList.add('active');
 
-    try {
+    this.executeBtn.disabled = false;
 
-      await import(
-        'https://cdn.jsdelivr.net/npm/bergamot-translator/dist/bergamot.esm.js'
-      );
+    this.panel.classList.add('active');
 
-      this.translator =
-        await globalThis.bergamot.loadTranslator({
-
-          downloadProgress: (pct) => {
-
-            const p = Math.round(pct);
-
-            this.setStatus(
-              'Downloading ' + p + '%'
-            );
-
-            this.activateBtn.innerText =
-              p + '%';
-          }
-        });
-
-      this.isLoaded = true;
-
-      this.activateBtn.innerText = 'AI Ready';
-
-      this.activateBtn.style.background =
-        '#28a745';
-
-      this.toggleBtn.classList.add('active');
-
-      this.executeBtn.disabled = false;
-
-      this.panel.classList.add('active');
-
-      this.setStatus('Translator Ready');
-
-    } catch(err) {
-
-      console.error(err);
-
-      this.activateBtn.innerText = 'FAILED';
-
-      this.setStatus(
-        'Translator failed to load'
-      );
-    }
+    this.setStatus('Ready');
   }
 
   setStatus(msg) {
-
     this.statusEl.textContent = msg;
   }
 
@@ -924,43 +891,28 @@ class SpreadsheetAI {
 
     let cmd = command.toLowerCase();
 
-    cmd = cmd
-      .replace(/xolumn/g,'column')
-      .replace(/reanslate/g,'translate')
-      .replace(/coumn/g,'column')
-      .replace(/clumn/g,'column');
-
     const match = cmd.match(
       /(?:column\s*)?([a-z])\s*(?:to|into)\s*(?:column\s*)?([a-z])/i
     );
 
     if (!match) {
-
       return {
-        error:
-        'Try: translate column a to b spanish'
+        error:'Try: translate column a to b spanish'
       };
     }
 
     let targetLang = 'es';
 
-    for (const [name,code]
-      of Object.entries(this.languageMap)) {
+    for (const [name, code] of Object.entries(this.languageMap)) {
 
       if (cmd.includes(name)) {
-
         targetLang = code;
       }
     }
 
     return {
-
-      fromCol:
-        match[1].toUpperCase().charCodeAt(0)-65,
-
-      toCol:
-        match[2].toUpperCase().charCodeAt(0)-65,
-
+      fromCol: match[1].toUpperCase().charCodeAt(0)-65,
+      toCol: match[2].toUpperCase().charCodeAt(0)-65,
       targetLang
     };
   }
@@ -985,22 +937,17 @@ class SpreadsheetAI {
     const c = r.cells[col+1];
 
     if (c) {
-
       c.innerText = text;
     }
   }
 
   async executeCommand() {
 
-    if (this.isRunning) return;
-
-    const cmd =
-      this.commandInput.value.trim();
+    const cmd = this.commandInput.value.trim();
 
     if (!cmd) return;
 
-    const parsed =
-      this.parseCommand(cmd);
+    const parsed = this.parseCommand(cmd);
 
     if (parsed.error) {
 
@@ -1009,18 +956,11 @@ class SpreadsheetAI {
       return;
     }
 
-    this.isRunning = true;
-
-    this.stopRequested = false;
-
     const tasks = [];
 
-    for (let r=2;
-      r<this.table.rows.length;
-      r++) {
+    for (let r=2; r<this.table.rows.length; r++) {
 
-      const text =
-        this.getCellText(parsed.fromCol,r);
+      const text = this.getCellText(parsed.fromCol,r);
 
       if (text) {
 
@@ -1033,81 +973,42 @@ class SpreadsheetAI {
 
     if (!tasks.length) {
 
-      this.setCommandStatus(
-        'No text found'
-      );
-
-      this.isRunning = false;
+      this.setCommandStatus('No text found');
 
       return;
     }
 
-    this.progressEl.classList.add('active');
-
     let done = 0;
 
-    const batchSize = 15;
+    for (const task of tasks) {
 
-    for (let i=0;
-      i<tasks.length;
-      i+=batchSize) {
+      const translated =
+        await window.fakeTranslate(
+          task.text,
+          parsed.targetLang
+        );
 
-      if (this.stopRequested) break;
+      this.setCellText(
+        parsed.toCol,
+        task.row,
+        translated
+      );
 
-      const batch =
-        tasks.slice(i,i+batchSize);
+      done++;
 
-      const texts =
-        batch.map(t => t.text);
+      const pct =
+        Math.round((done/tasks.length)*100);
 
-      try {
+      this.progressFill.style.width =
+        pct + '%';
 
-        const results =
-          await this.translator.translate(
-            'en',
-            parsed.targetLang,
-            texts
-          );
-
-        for (let j=0;
-          j<batch.length;
-          j++) {
-
-          const task = batch[j];
-
-          this.setCellText(
-            parsed.toCol,
-            task.row,
-            results[j].targetText
-          );
-
-          done++;
-
-          const pct =
-            Math.round(
-              (done/tasks.length)*100
-            );
-
-          this.progressFill.style.width =
-            pct + '%';
-
-          this.progressText.textContent =
-            done + '/' + tasks.length;
-        }
-
-      } catch(err) {
-
-        console.error(err);
-      }
+      this.progressText.textContent =
+        done + '/' + tasks.length;
     }
-
-    this.progressEl.classList.remove('active');
 
     this.setCommandStatus(
       'Done ' + done
     );
-
-    this.isRunning = false;
   }
 }
 
@@ -1121,8 +1022,6 @@ if (aiTable) {
 </script>
 
 
-  <script src="translator.js"></script>
   
-
 </body>
 </html>
