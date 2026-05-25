@@ -63,8 +63,7 @@ export class SpreadsheetAI {
   async init() {
     try {
       this.setStatus('⏳ Loading Bergamot Translator (~75MB)...');
-      
-      await import('https://unpkg.com/bergamot-translator@0.6.2/dist/bergamot.es.js');
+      await import('https://cdn.jsdelivr.net/npm/bergamot-translator@0.6.2/dist/bergamot.es.js')
       
       this.translator = await globalThis.bergamot.loadTranslator({
         downloadProgress: (pct) => {
