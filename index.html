@@ -709,14 +709,18 @@ box.style.display = box.style.display === "none" || box.style.display === "" ? "
 </script>
 
 
-  <script type="module">
-  import { SpreadsheetAI } from './ai-module.js';
 
-  // IMPORTANT: Replace 'myTable' with YOUR table's ID
-  const myTable = document.getElementById('myTable'); // ← CHANGE THIS
-  
+
+
+<script type="module">
+  import { SpreadsheetAI } from './ai-module.js';
+  const myTable = document.getElementById('sheet');   // ← 'sheet', not 'myTable'
   const ai = new SpreadsheetAI(myTable);
 </script>
+
+
+
+  
 
 <script src="script.js"></script>
 </body>
