@@ -564,147 +564,199 @@ Upload
 </div>
 
 <div id="sheetWrap">
-<table id="sheet"></table>
+  <table id="sheet"></table>
 </div>
 
 <script>
-// --- CONFIGURATION ---
+// ===============================
+// 1. CONFIGURATION
+// ===============================
 const TOTAL_COLS = 26;
-let totalRows = 26; // STARTS EXACTLY AT 26
-
+let totalRows = 26;
 const sheetTable = document.getElementById("sheet");
-const colSelectMap = { 0:'A', 1:'B', 2:'C', 3:'D', 4:'E', 5:'F', 6:'G', 7:'H', 8:'I', 9:'J', 10:'K', 11:'L', 12:'M', 13:'N', 14:'O', 15:'P', 16:'Q', 17:'R', 18:'S', 19:'T', 20:'U', 21:'V', 22:'W', 23:'X', 24:'Y', 25:'Z' };
 
-// --- 1. INITIAL RENDER (Fast & Static) ---
-// Generate Header (Letters A-Z)
-let headerRow = "<tr><th></th>";
-for(let c=0; c<TOTAL_COLS; c++) headerRow += `<th>${colSelectMap[c]}</th>`;
-headerRow += "</tr>";
+const staticCells = Array(TOTAL_COLS)
+  .fill('<td contenteditable="true"></td>')
+  .join("");
 
-// Generate Selector Row (Languages)
+// ===============================
+// 2. BUILD TABLE
+// ===============================
+// Header row (column letters)
+let headerHtml = "<tr><th></th>";
+for (let c = 0; c < TOTAL_COLS; c++) {
+  headerHtml += `<th>${String.fromCharCode(65 + c)}</th>`;
+}
+headerHtml += "</tr>";
+
+// Language selector row
 let selRow = "<tr><th></th>";
-for(let c=0; c<TOTAL_COLS; c++) {
-selRow += `<th><select class='col-select'><option>Off</option><option>EN</option><option>IT</option><option>ES</option><option>FR</option><option>DE</option></select></th>`;
+for (let c = 0; c < TOTAL_COLS; c++) {
+  selRow += `<th><select class='col-select'>` +
+            `<option>Off</option>` +
+            `<option>EN</option>` +
+            `<option>IT</option>` +
+            `<option>ES</option>` +
+            `<option>FR</option>` +
+            `<option>DE</option>` +
+            `</select></th>`;
 }
 selRow += "</tr>";
 
-// Cache the static cells HTML for reuse
-const staticCells = Array(TOTAL_COLS).fill('<td contenteditable="true"></td>').join("");
-
-// Build Body (Exactly 26 Rows)
+// Data rows (26 × 26)
 let bodyHtml = "";
-for(let r=1; r<=totalRows; r++){
-bodyHtml += `<tr><th class="row-head">${r}</th>${staticCells}</tr>`;
+for (let r = 1; r <= totalRows; r++) {
+  bodyHtml += `<tr><th class="row-head">${r}</th>${staticCells}</tr>`;
 }
 
-sheetTable.innerHTML = headerRow + selRow + bodyHtml;
+sheetTable.innerHTML = headerHtml + selRow + bodyHtml;
 
 
-// --- 2. SMART EXPANSION LOGIC ---
-
-// Function to add N new rows at the bottom quickly
+// ===============================
+// 3. SMART ROW EXPANSION
+// ===============================
 function addNewRows(count) {
-if(count <= 0) return;
-let htmlBuffer = "";
-for(let i=0; i<count; i++){
-totalRows++;
-htmlBuffer += `<tr><th class="row-head">${totalRows}</th>${staticCells}</tr>`;
-}
-sheetTable.insertAdjacentHTML('beforeend', htmlBuffer);
+  if (count <= 0) return;
+  let htmlBuffer = "";
+  for (let i = 0; i < count; i++) {
+    totalRows++;
+    htmlBuffer += `<tr><th class="row-head">${totalRows}</th>${staticCells}</tr>`;
+  }
+  sheetTable.insertAdjacentHTML('beforeend', htmlBuffer);
 }
 
-// --- 3. TAB NAVIGATION HANDLER ---
+
+// ===============================
+// 4. CARET HELPER (single definition)
+// ===============================
+function placeCaretAtEnd(el) {
+  el.focus();
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  range.collapse(false);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
+
+// ===============================
+// 5. TAB NAVIGATION
+// ===============================
 sheetTable.addEventListener('keydown', (e) => {
-const target = e.target;
+  const target = e.target;
+  if (target.tagName.toLowerCase() !== 'td') return;
 
-// ONLY INTERCEPT IF INSIDE A DATA CELL (<td>)
-if(target.tagName.toLowerCase() !== 'td') return;
+  if (e.key === 'Tab') {
+    e.preventDefault();
 
-if(e.key === 'Tab') {
-e.preventDefault(); // Stop default focus jump
+    const tdIndex = Array.from(target.parentElement.children)
+      .indexOf(target);
+    const rowIndex = Array.from(sheetTable.querySelectorAll('tr'))
+      .indexOf(target.parentElement);
 
-// Get current cell info
-const tdIndex = Array.from(target.parentElement.children).indexOf(target);
-const rowIndex = Array.from(sheetTable.querySelectorAll('tr')).indexOf(target.parentElement);
+    let nextTd;
 
-// Determine Next Cell
-let nextTd;
+    if (tdIndex === TOTAL_COLS) {
+      if (rowIndex === sheetTable.rows.length - 1) {
+        addNewRows(1);
+        const newRow = sheetTable.rows[sheetTable.rows.length - 1];
+        nextTd = newRow.cells[1];
+      } else {
+        const nextRow = sheetTable.rows[rowIndex + 1];
+        nextTd = nextRow.cells[1];
+      }
+    } else {
+      nextTd = target.nextElementSibling;
+    }
 
-// Is it the last column (Z)?
-if(tdIndex === TOTAL_COLS) { 
-// Check if it is the very last row of the whole table
-if(rowIndex === sheetTable.rows.length - 1) {
-// EXPAND: Create new row
-addNewRows(1);
-// Move focus to first cell of new row
-const newRow = sheetTable.rows[sheetTable.rows.length - 1];
-nextTd = newRow.cells[1]; // Index 0 is row number, 1 is Column A
-} else {
-// Move to first cell of NEXT row
-const nextRow = sheetTable.rows[rowIndex + 1];
-nextTd = nextRow.cells[1];
-}
-} else {
-// Same row, next column
-nextTd = target.nextElementSibling;
-}
-
-if(nextTd && nextTd.tagName.toLowerCase() === 'td') {
-nextTd.focus();
-// Place cursor at end of content
-placeCaretAtEnd(nextTd);
-}
-}
+    if (nextTd && nextTd.tagName.toLowerCase() === 'td') {
+      nextTd.focus();
+      placeCaretAtEnd(nextTd);
+    }
+  }
 });
 
-// Helper for caret position
-function placeCaretAtEnd(el) {
-el.focus();
-var range = document.createRange();
-range.selectNodeContents(el);
-range.collapse(false);
-var sel = window.getSelection();
-sel.removeAllRanges();
-sel.addRange(range);
-}
 
+// ===============================
+// 6. COLUMN UPLOAD (unified)
+// ===============================
+window.uploadColumn = function () {
+  const rawText = document.getElementById("columnData")?.value?.trim();
+  if (!rawText) {
+    alert("Please paste some text.");
+    return;
+  }
 
-// --- 4. COLUMN UPLOAD LOGIC ---
-window.uploadColumn = function() {
-const rawText = document.getElementById("columnData").value;
-const colIndexInput = parseInt(document.getElementById("columnSelect").value);
+  // Parse start cell (e.g. "A1", "B5", "C12")
+  const startCellInput = document.getElementById("startCellUpload")
+    ?.value?.trim().toUpperCase() || "A1";
+  const match = startCellInput.match(/^([A-Z]+)(\d+)$/);
+  if (!match) {
+    alert("Invalid cell format. Use A1, B5, C12, etc.");
+    return;
+  }
 
-if(!rawText.trim()) return alert("Please paste some text.");
+  let startCol = match[1].charCodeAt(0) - 65;
+  let startRow = parseInt(match[2]) - 1;
 
-const lines = rawText.split(/\r?\n/);
+  const direction = document.getElementById("uploadDirection")?.value || "down";
 
-// Check if we need more rows
-const currentDataRows = sheetTable.rows.length - 2; // Minus header rows
-if(lines.length > currentDataRows) {
-const missingRows = lines.length - currentDataRows;
-console.log(`Auto-expanding ${missingRows} rows...`);
-addNewRows(missingRows);
-}
+  const lines = rawText.split(/\r?\n/).filter(x => x.trim() !== "");
+  if (!lines.length) return;
 
-// Clear target column first? Optional. Let's fill.
-const allRows = sheetTable.rows;
+  // Auto-expand if needed
+  const neededRows = direction === "down"
+    ? startRow + lines.length
+    : startRow + 1;
+  const currentDataRows = sheetTable.rows.length - 2;
 
-// Fill Data (Start at index 2 because 0 is letters, 1 is language selectors)
-for(let i = 0; i < lines.length; i++) {
-if(allRows[i+2]) { // Check if row exists
-const td = allRows[i+2].cells[colIndexInput + 1]; // +1 because index 0 is row number
-if(td) td.innerText = lines[i];
-}
-}
+  if (neededRows > currentDataRows) {
+    addNewRows(neededRows - currentDataRows);
+  }
 
-// Hide UI feedback
-document.getElementById("uploadBox").style.display = "none";
+  // Fill cells
+  for (let i = 0; i < lines.length; i++) {
+    let r = startRow;
+    let c = startCol;
+
+    if (direction === "down") {
+      r += i;
+    } else {
+      c += i;
+    }
+
+    const row = sheetTable.rows[r + 2]; // +2 for header + selector
+    if (!row) continue;
+    const cell = row.cells[c + 1];      // +1 for row-number
+    if (cell) cell.innerText = lines[i];
+  }
+
+  alert(`✅ Uploaded ${lines.length} item${lines.length > 1 ? 's' : ''}!`);
 };
 
-// Helper functions for buttons (Toggle visibility)
-window.toggleUpload = () => {
-const box = document.getElementById("uploadBox");
-box.style.display = box.style.display === "none" || box.style.display === "" ? "block" : "none";
+
+// ===============================
+// 7. TOGGLE FUNCTIONS (single definitions)
+// ===============================
+window.toggleUpload = function () {
+  const box = document.getElementById("uploadBox");
+  if (!box) return;
+  box.style.display = (box.style.display === "block") ? "none" : "block";
+};
+
+window.toggleExtract = function () {
+  const box = document.getElementById("extractBox");
+  if (!box) return;
+  const uploadBox = document.getElementById("uploadBox");
+  if (uploadBox) uploadBox.style.display = "none";
+  box.style.display = (box.style.display === "block") ? "none" : "block";
+};
+
+window.toggleReader = function () {
+  const bar = document.getElementById("toolbar");
+  if (!bar) return;
+  bar.style.display = (bar.style.display === "flex") ? "none" : "flex";
 };
 </script>
 
