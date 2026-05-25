@@ -708,14 +708,10 @@ Press Ctrl+Enter to run"
   };
 </script>
 
-
-  <script type="module">
+<script type="module">
   import { SpreadsheetAI } from './ai-module.js';
-
-  // IMPORTANT: Replace 'myTable' with YOUR table's ID
-  const myTable = document.getElementById('myTable'); // ← CHANGE THIS
-  
-  const ai = new SpreadsheetAI(myTable);
+  const ai = new SpreadsheetAI(document.getElementById('sheet'));
+  window.ai = ai; // optional, makes it available in console for debugging
 </script>
 
 
