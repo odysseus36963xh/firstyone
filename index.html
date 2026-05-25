@@ -766,82 +766,356 @@ window.toggleReader = function () {
 
 
 
-
-
 <script>
+class SpreadsheetAI {
+
+  constructor(tableElement) {
+
+    this.table = tableElement;
+
+    this.translator = null;
+
+    this.isRunning = false;
+
+    this.stopRequested = false;
+
+    this.isLoaded = false;
+
+    this.statusEl = document.getElementById('aiStatus');
+    this.progressEl = document.getElementById('aiProgress');
+    this.progressFill = document.getElementById('aiProgressFill');
+    this.progressText = document.getElementById('aiProgressText');
+    this.currentCellEl = document.getElementById('aiCurrentCell');
+    this.stopBtn = document.getElementById('aiStop');
+    this.commandStatus = document.getElementById('aiCommandStatus');
+    this.executeBtn = document.getElementById('aiExecute');
+    this.commandInput = document.getElementById('aiCommand');
+    this.activateBtn = document.getElementById('aiActivate');
+    this.toggleBtn = document.getElementById('aiToggle');
+    this.closeBtn = document.getElementById('aiClose');
+    this.panel = document.getElementById('aiPanel');
+
+    this.languageMap = {
+
+      english:'en',
+      spanish:'es',
+      french:'fr',
+      german:'de',
+      italian:'it',
+      portuguese:'pt',
+
+      en:'en',
+      es:'es',
+      fr:'fr',
+      de:'de',
+      it:'it',
+      pt:'pt'
+    };
+
+    this.initUI();
+  }
+
+  initUI() {
+
+    this.activateBtn.onclick = () => this.activateAI();
+
+    this.toggleBtn.onclick = () => {
+      this.panel.classList.toggle('active');
+    };
+
+    this.closeBtn.onclick = () => {
+      this.panel.classList.remove('active');
+    };
+
+    this.executeBtn.onclick = () => {
+      this.executeCommand();
+    };
+
+    this.stopBtn.onclick = () => {
+      this.stopRequested = true;
+    };
+
+    this.commandInput.addEventListener('keydown', (e) => {
+
+      if (e.ctrlKey && e.key === 'Enter') {
+
+        e.preventDefault();
+
+        this.executeCommand();
+      }
+    });
+
+    this.setStatus('Click Turn On AI');
+  }
+
+  async activateAI() {
+
+    if (this.isLoaded) {
+
+      this.panel.classList.add('active');
+
+      return;
+    }
+
+    this.activateBtn.innerText = 'Loading Translator...';
+
+    try {
+
+      await import(
+        'https://cdn.jsdelivr.net/npm/bergamot-translator/dist/bergamot.esm.js'
+      );
+
+      this.translator =
+        await globalThis.bergamot.loadTranslator({
+
+          downloadProgress: (pct) => {
+
+            const p = Math.round(pct);
+
+            this.setStatus(
+              'Downloading ' + p + '%'
+            );
+
+            this.activateBtn.innerText =
+              p + '%';
+          }
+        });
+
+      this.isLoaded = true;
+
+      this.activateBtn.innerText = 'AI Ready';
+
+      this.activateBtn.style.background =
+        '#28a745';
+
+      this.toggleBtn.classList.add('active');
+
+      this.executeBtn.disabled = false;
+
+      this.panel.classList.add('active');
+
+      this.setStatus('Translator Ready');
+
+    } catch(err) {
+
+      console.error(err);
+
+      this.activateBtn.innerText = 'FAILED';
+
+      this.setStatus(
+        'Translator failed to load'
+      );
+    }
+  }
+
+  setStatus(msg) {
+
+    this.statusEl.textContent = msg;
+  }
+
+  setCommandStatus(msg) {
+
+    this.commandStatus.classList.add('active');
+
+    this.commandStatus.textContent = msg;
+  }
+
+  parseCommand(command) {
+
+    let cmd = command.toLowerCase();
+
+    cmd = cmd
+      .replace(/xolumn/g,'column')
+      .replace(/reanslate/g,'translate')
+      .replace(/coumn/g,'column')
+      .replace(/clumn/g,'column');
+
+    const match = cmd.match(
+      /(?:column\s*)?([a-z])\s*(?:to|into)\s*(?:column\s*)?([a-z])/i
+    );
+
+    if (!match) {
+
+      return {
+        error:
+        'Try: translate column a to b spanish'
+      };
+    }
+
+    let targetLang = 'es';
+
+    for (const [name,code]
+      of Object.entries(this.languageMap)) {
+
+      if (cmd.includes(name)) {
+
+        targetLang = code;
+      }
+    }
+
+    return {
+
+      fromCol:
+        match[1].toUpperCase().charCodeAt(0)-65,
+
+      toCol:
+        match[2].toUpperCase().charCodeAt(0)-65,
+
+      targetLang
+    };
+  }
+
+  getCellText(col,row) {
+
+    const r = this.table.rows[row];
+
+    if (!r) return '';
+
+    const c = r.cells[col+1];
+
+    return c ? c.innerText.trim() : '';
+  }
+
+  setCellText(col,row,text) {
+
+    const r = this.table.rows[row];
+
+    if (!r) return;
+
+    const c = r.cells[col+1];
+
+    if (c) {
+
+      c.innerText = text;
+    }
+  }
+
+  async executeCommand() {
+
+    if (this.isRunning) return;
+
+    const cmd =
+      this.commandInput.value.trim();
+
+    if (!cmd) return;
+
+    const parsed =
+      this.parseCommand(cmd);
+
+    if (parsed.error) {
+
+      this.setCommandStatus(parsed.error);
+
+      return;
+    }
+
+    this.isRunning = true;
+
+    this.stopRequested = false;
+
+    const tasks = [];
+
+    for (let r=2;
+      r<this.table.rows.length;
+      r++) {
+
+      const text =
+        this.getCellText(parsed.fromCol,r);
+
+      if (text) {
+
+        tasks.push({
+          row:r,
+          text
+        });
+      }
+    }
+
+    if (!tasks.length) {
+
+      this.setCommandStatus(
+        'No text found'
+      );
+
+      this.isRunning = false;
+
+      return;
+    }
+
+    this.progressEl.classList.add('active');
+
     let done = 0;
 
-    const batchSize = 20;
+    const batchSize = 15;
 
-    for (let i = 0; i < tasks.length; i += batchSize) {
+    for (let i=0;
+      i<tasks.length;
+      i+=batchSize) {
 
       if (this.stopRequested) break;
 
-      const batch = tasks.slice(i, i + batchSize);
+      const batch =
+        tasks.slice(i,i+batchSize);
 
-      const texts = batch.map(t => t.text);
+      const texts =
+        batch.map(t => t.text);
 
       try {
 
-        const results = await this.translator.translate(
-          'en',
-          parsed.targetLang,
-          texts
-        );
+        const results =
+          await this.translator.translate(
+            'en',
+            parsed.targetLang,
+            texts
+          );
 
-        for (let j = 0; j < batch.length; j++) {
+        for (let j=0;
+          j<batch.length;
+          j++) {
 
           const task = batch[j];
-
-          this.markCell(parsed.toCol, task.row, true);
 
           this.setCellText(
             parsed.toCol,
             task.row,
-            results[j].targetText.trim()
+            results[j].targetText
           );
-
-          this.markCell(parsed.toCol, task.row, false);
 
           done++;
 
-          this.updateProgress(
-            done,
-            tasks.length,
-            task.text,
-            task.row - 1
-          );
+          const pct =
+            Math.round(
+              (done/tasks.length)*100
+            );
+
+          this.progressFill.style.width =
+            pct + '%';
+
+          this.progressText.textContent =
+            done + '/' + tasks.length;
         }
 
-      } catch (err) {
+      } catch(err) {
 
         console.error(err);
       }
-
-      await this.delay(30);
     }
 
-    this.hideProgress();
+    this.progressEl.classList.remove('active');
 
     this.setCommandStatus(
-      `Done. ${done} translated`
-    );
-
-    this.setStatus(
-      `✅ Finished ${done} translations`
+      'Done ' + done
     );
 
     this.isRunning = false;
   }
-
-  delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
 }
 
-const aiTable = document.getElementById('sheet');
+const aiTable =
+  document.getElementById('sheet');
 
 if (aiTable) {
+
   new SpreadsheetAI(aiTable);
 }
 </script>
