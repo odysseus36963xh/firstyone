@@ -1,13 +1,24 @@
-// ai-module.js - FULLY STATIC VERSION FOR GITHUB PAGES
-export class SpreadsheetAI {
+// ===============================
+// LIGHTWEIGHT AI MODULE
+// GitHub Pages Friendly
+// Uses LibreTranslate API
+// NO Xenova
+// NO WASM downloads
+// NO browser crashes
+// ===============================
+
+class SpreadsheetAI {
   constructor(tableElement) {
     this.table = tableElement;
-    this.translator = null;
-    this.ai = null;
     this.isRunning = false;
     this.stopRequested = false;
     this.isLoaded = false;
 
+    // FREE PUBLIC ENDPOINT
+    // You can replace later with your own server
+    this.API_URL = "https://libretranslate.de/translate";
+
+    // UI Elements
     this.statusEl = document.getElementById('aiStatus');
     this.progressEl = document.getElementById('aiProgress');
     this.progressFill = document.getElementById('aiProgressFill');
@@ -15,244 +26,460 @@ export class SpreadsheetAI {
     this.currentCellEl = document.getElementById('aiCurrentCell');
     this.stopBtn = document.getElementById('aiStop');
     this.commandStatus = document.getElementById('aiCommandStatus');
+    this.executeBtn = document.getElementById('aiExecute');
+    this.commandInput = document.getElementById('aiCommand');
+    this.activateBtn = document.getElementById('aiActivate');
+    this.toggleBtn = document.getElementById('aiToggle');
+    this.closeBtn = document.getElementById('aiClose');
+    this.panel = document.getElementById('aiPanel');
 
     this.languageMap = {
-      'english': 'en', 'spanish': 'es', 'french': 'fr', 'german': 'de',
-      'italian': 'it', 'portuguese': 'pt', 'dutch': 'nl', 'russian': 'ru',
-      'spain': 'es', 'español': 'es', 'français': 'fr', 'deutsch': 'de',
-      'en': 'en', 'es': 'es', 'fr': 'fr', 'de': 'de', 'it': 'it', 'pt': 'pt'
+      english: 'en',
+      spanish: 'es',
+      espanol: 'es',
+      french: 'fr',
+      german: 'de',
+      italian: 'it',
+      portuguese: 'pt',
+      dutch: 'nl',
+      russian: 'ru',
+
+      en: 'en',
+      es: 'es',
+      fr: 'fr',
+      de: 'de',
+      it: 'it',
+      pt: 'pt',
+      nl: 'nl',
+      ru: 'ru'
     };
 
-    this.setupActivation();
+    this.initUI();
   }
 
-  setupActivation() {
-    const activateBtn = document.getElementById('aiActivate');
-    const toggleBtn = document.getElementById('aiToggle');
-    const panel = document.getElementById('aiPanel');
+  // ===============================
+  // UI INIT
+  // ===============================
+  initUI() {
 
-    activateBtn.onclick = async () => {
-      if (this.isLoaded) {
-        panel.classList.add('active');
-        return;
-      }
-      activateBtn.textContent = '⏳ Loading AI (first time only)...';
-      await this.init();
-      this.isLoaded = true;
-    };
+    if (this.activateBtn) {
+      this.activateBtn.onclick = () => this.activateAI();
+    }
 
-    toggleBtn.onclick = () => panel.classList.toggle('active');
-    document.getElementById('aiClose').onclick = () => panel.classList.remove('active');
-    this.setupEventListeners();
-  }
+    if (this.toggleBtn) {
+      this.toggleBtn.onclick = () => {
+        this.panel.classList.toggle('active');
+      };
+    }
 
-  setupEventListeners() {
-    document.getElementById('aiExecute').onclick = () => this.executeCommand();
-    
-    const input = document.getElementById('aiCommand');
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        this.executeCommand();
-      }
-    });
+    if (this.closeBtn) {
+      this.closeBtn.onclick = () => {
+        this.panel.classList.remove('active');
+      };
+    }
 
-    this.stopBtn.onclick = () => { this.stopRequested = true; };
-  }
+    if (this.executeBtn) {
+      this.executeBtn.onclick = () => this.executeCommand();
+    }
 
-  async init() {
-    try {
-      this.setStatus('⏳ Loading Bergamot Translator (~75MB)...');
-      await import('https://cdn.jsdelivr.net/npm/bergamot-translator@0.6.2/dist/bergamot.es.js')
-      
-      this.translator = await globalThis.bergamot.loadTranslator({
-        downloadProgress: (pct) => {
-          this.setStatus(`⏳ Translator: ${Math.round(pct)}%`);
+    if (this.commandInput) {
+      this.commandInput.addEventListener('keydown', (e) => {
+
+        // CTRL + ENTER
+        if (e.ctrlKey && e.key === 'Enter') {
+          e.preventDefault();
+          this.executeCommand();
         }
       });
+    }
 
-      this.setStatus('⏳ Loading Light AI Model (~80MB)...');
-      
-      const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.2.1');
-      
-      this.ai = await pipeline('text2text-generation', 'Xenova/flan-t5-small', {
-        quantized: true,
-        progress_callback: (data) => {
-          if (data.progress) {
-            this.setStatus(`⏳ AI Model: ${Math.round(data.progress)}%`);
-          }
-        }
-      });
+    if (this.stopBtn) {
+      this.stopBtn.onclick = () => {
+        this.stopRequested = true;
+        this.progressText.textContent = '⏹ Stopping...';
+      };
+    }
 
-      this.setStatus('✅ AI Ready! Example: translate column a to column b spanish');
-      document.getElementById('aiExecute').disabled = false;
+    this.setStatus('Click "Turn On AI"');
+  }
 
-    } catch (err) {
-      console.error(err);
-      this.setStatus('❌ Failed to load. Check internet connection.');
+  // ===============================
+  // ACTIVATE
+  // ===============================
+  async activateAI() {
+
+    this.isLoaded = true;
+
+    this.activateBtn.textContent = '✅ AI Ready';
+    this.activateBtn.style.background = '#28a745';
+
+    this.toggleBtn.classList.add('active');
+
+    this.executeBtn.disabled = false;
+
+    this.panel.classList.add('active');
+
+    this.setStatus('✅ Ready');
+
+    this.setCommandStatus(
+      'Example: translate column a to column b spanish'
+    );
+  }
+
+  // ===============================
+  // STATUS HELPERS
+  // ===============================
+  setStatus(msg) {
+    if (this.statusEl) {
+      this.statusEl.textContent = msg;
     }
   }
 
-  setStatus(msg) { this.statusEl.textContent = msg; }
+  setCommandStatus(msg) {
+    if (this.commandStatus) {
+      this.commandStatus.classList.add('active');
+      this.commandStatus.textContent = msg;
+    }
+  }
 
-  showProgress(text) {
+  showProgress(label) {
+
     this.progressEl.classList.add('active');
-    this.progressText.textContent = text;
+
     this.progressFill.style.width = '0%';
+
+    this.progressText.textContent = label;
+
     this.stopBtn.style.display = 'block';
   }
 
-  updateProgress(done, total, text, row) {
-    const pct = Math.round((done / total) * 100);
-    this.progressFill.style.width = pct + '%';
-    this.progressText.textContent = `Row ${row} • ${done}/${total} (${pct}%)`;
-    this.currentCellEl.textContent = text.length > 40 ? text.substring(0, 40) + '...' : text;
-  }
-
   hideProgress() {
+
     setTimeout(() => {
+
       this.progressEl.classList.remove('active');
+
       this.stopBtn.style.display = 'none';
+
     }, 1000);
   }
 
-  getCellText(col, row) {
-    const r = this.table.rows[row];
-    return r && r.cells[col + 1] ? r.cells[col + 1].textContent.trim() : '';
+  updateProgress(done, total, text, row) {
+
+    const pct = Math.round((done / total) * 100);
+
+    this.progressFill.style.width = pct + '%';
+
+    this.progressText.textContent =
+      `Row ${row} • ${done}/${total} (${pct}%)`;
+
+    this.currentCellEl.textContent =
+      text.length > 50
+        ? text.substring(0, 50) + '...'
+        : text;
   }
 
-  setCellText(col, row, value) {
-    const r = this.table.rows[row];
-    if (r && r.cells[col + 1]) r.cells[col + 1].textContent = value;
+  // ===============================
+  // CELL HELPERS
+  // ===============================
+  getCellText(colIndex, rowIndex) {
+
+    const row = this.table.rows[rowIndex];
+
+    if (!row) return '';
+
+    const cell = row.cells[colIndex + 1];
+
+    return cell ? cell.textContent.trim() : '';
   }
 
-  markCell(col, row, processing) {
-    const r = this.table.rows[row];
-    if (!r || !r.cells[col + 1]) return;
-    const cell = r.cells[col + 1];
-    if (processing) {
-      cell.classList.add('cell-processing');
-    } else {
-      cell.classList.remove('cell-processing');
-      cell.classList.add('cell-completed');
-      setTimeout(() => cell.classList.remove('cell-completed'), 700);
+  setCellText(colIndex, rowIndex, value) {
+
+    const row = this.table.rows[rowIndex];
+
+    if (!row) return;
+
+    const cell = row.cells[colIndex + 1];
+
+    if (cell) {
+      cell.textContent = value;
     }
   }
 
-  // Very forgiving parser for your typing style
-  parseCommand(cmd) {
-    cmd = cmd.toLowerCase().replace(/coumn|coln|colum|clumn|ijn|in to|into|2|→/g, ' ');
-    const words = cmd.split(/\s+/);
+  markCell(colIndex, rowIndex, processing = true) {
 
-    let action = 'translate';
-    let fromCol = null;
-    let toCol = null;
+    const row = this.table.rows[rowIndex];
+
+    if (!row) return;
+
+    const cell = row.cells[colIndex + 1];
+
+    if (!cell) return;
+
+    if (processing) {
+
+      cell.classList.add('cell-processing');
+
+    } else {
+
+      cell.classList.remove('cell-processing');
+
+      cell.classList.add('cell-completed');
+
+      setTimeout(() => {
+        cell.classList.remove('cell-completed');
+      }, 1200);
+    }
+  }
+
+  // ===============================
+  // COMMAND PARSER
+  // ===============================
+  parseCommand(command) {
+
+    let cmd = command.toLowerCase();
+
+    // fix messy spelling
+    cmd = cmd
+      .replace(/xolumn/g, 'column')
+      .replace(/reanslate/g, 'translate')
+      .replace(/coumn/g, 'column')
+      .replace(/clumn/g, 'column')
+      .replace(/coln/g, 'column');
+
+    // MATCH:
+    // column a to b
+    // translate a to b
+    // column a into column b
+    const match = cmd.match(
+      /(?:column\s*)?([a-z])\s*(?:to|into)\s*(?:column\s*)?([a-z])/i
+    );
+
+    if (!match) {
+
+      return {
+        error:
+          'Use something like: translate column a to b spanish'
+      };
+    }
+
+    const fromCol =
+      match[1].toUpperCase().charCodeAt(0) - 65;
+
+    const toCol =
+      match[2].toUpperCase().charCodeAt(0) - 65;
+
+    // default language
     let targetLang = 'es';
 
-    // Find column letters
-    const colLetters = words.filter(w => /^[a-z]$/.test(w));
-    if (colLetters.length >= 1) fromCol = colLetters[0].charCodeAt(0) - 97;
-    if (colLetters.length >= 2) toCol = colLetters[1].charCodeAt(0) - 97;
+    for (const [name, code] of Object.entries(this.languageMap)) {
 
-    // Find language
-    for (let [name, code] of Object.entries(this.languageMap)) {
-      if (words.includes(name)) {
+      if (cmd.includes(name)) {
+
         targetLang = code;
         break;
       }
     }
 
-    if (cmd.includes('summarize') || cmd.includes('summary')) action = 'summarize';
-    else if (cmd.includes('grammar') || cmd.includes('fix') || cmd.includes('correct')) action = 'grammar';
-    else if (cmd.includes('sentiment')) action = 'sentiment';
-
-    return { action, fromCol, toCol, targetLang };
+    return {
+      action: 'translate',
+      fromCol,
+      toCol,
+      targetLang
+    };
   }
 
+  // ===============================
+  // EXECUTE COMMAND
+  // ===============================
   async executeCommand() {
-    const text = document.getElementById('aiCommand').value.trim();
-    if (!text) return;
 
-    this.commandStatus.classList.add('active');
-    this.commandStatus.textContent = '🤔 Processing command...';
+    if (this.isRunning) return;
 
-    const parsed = this.parseCommand(text);
+    const command = this.commandInput.value.trim();
 
-    if (parsed.fromCol === null) {
-      this.commandStatus.textContent = '❌ Please mention column letters (example: column a to b spanish)';
+    if (!command) return;
+
+    const parsed = this.parseCommand(command);
+
+    if (parsed.error) {
+
+      this.setCommandStatus('❌ ' + parsed.error);
+
       return;
     }
 
-    this.commandStatus.textContent = `✅ Running translation from column ${String.fromCharCode(65 + parsed.fromCol)} → ${String.fromCharCode(65 + parsed.toCol)} (${parsed.targetLang})`;
+    const fromLetter =
+      String.fromCharCode(parsed.fromCol + 65);
 
-    await this.delay(400);
+    const toLetter =
+      String.fromCharCode(parsed.toCol + 65);
 
-    if (parsed.action === 'translate') {
-      await this.translateCommand(parsed.fromCol, parsed.toCol, parsed.targetLang);
-    } else {
-      await this.processAICommand(parsed.fromCol, parsed.toCol, parsed.action);
-    }
+    this.setCommandStatus(
+      `✅ Translating ${fromLetter} → ${toLetter}`
+    );
+
+    await this.translateColumn(
+      parsed.fromCol,
+      parsed.toCol,
+      parsed.targetLang
+    );
   }
 
-  async translateCommand(fromCol, toCol, targetLang) {
-    if (this.isRunning) return;
+  // ===============================
+  // API TRANSLATION
+  // ===============================
+  async translateText(text, targetLang = 'es') {
+
+    const response = await fetch(this.API_URL, {
+
+      method: 'POST',
+
+      headers: {
+        'Content-Type': 'application/json'
+      },
+
+      body: JSON.stringify({
+
+        q: text,
+
+        source: 'auto',
+
+        target: targetLang,
+
+        format: 'text'
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Translation failed');
+    }
+
+    const data = await response.json();
+
+    return data.translatedText;
+  }
+
+  // ===============================
+  // TRANSLATE COLUMN
+  // ===============================
+  async translateColumn(fromCol, toCol, targetLang) {
+
     this.isRunning = true;
+
     this.stopRequested = false;
 
     const tasks = [];
+
+    // START AT ROW 2
     for (let r = 2; r < this.table.rows.length; r++) {
-      const txt = this.getCellText(fromCol, r);
-      if (txt) tasks.push({ row: r, text: txt });
+
+      const text = this.getCellText(fromCol, r);
+
+      if (text) {
+
+        tasks.push({
+          row: r,
+          text
+        });
+      }
     }
 
     if (!tasks.length) {
-      this.setStatus('⚠️ No text in source column');
-      this.commandStatus.textContent = '⚠️ No text found';
+
+      this.setCommandStatus(
+        '⚠️ No text found in source column'
+      );
+
       this.isRunning = false;
+
       return;
     }
 
-    this.showProgress(`Translating ${tasks.length} cells to ${targetLang.toUpperCase()}`);
+    this.showProgress(
+      `Translating ${tasks.length} cells`
+    );
 
-    let done = 0;
-    const batchSize = 20;
+    let completed = 0;
 
-    for (let i = 0; i < tasks.length; i += batchSize) {
+    // ONE BY ONE
+    // avoids crashes
+    for (const task of tasks) {
+
       if (this.stopRequested) break;
-      const batch = tasks.slice(i, i + batchSize);
 
       try {
-        const results = await this.translator.translate('en', targetLang, batch.map(t => t.text));
 
-        for (let j = 0; j < batch.length; j++) {
-          const task = batch[j];
-          this.markCell(toCol, task.row, true);
-          this.updateProgress(done + 1, tasks.length, task.text, task.row);
-          this.setCellText(toCol, task.row, results[j].targetText.trim());
-          this.markCell(toCol, task.row, false);
-          done++;
-        }
-      } catch (e) {
-        console.error(e);
+        this.markCell(toCol, task.row, true);
+
+        this.updateProgress(
+          completed + 1,
+          tasks.length,
+          task.text,
+          task.row - 1
+        );
+
+        const translated = await this.translateText(
+          task.text,
+          targetLang
+        );
+
+        this.setCellText(
+          toCol,
+          task.row,
+          translated
+        );
+
+        this.markCell(toCol, task.row, false);
+
+        completed++;
+
+      } catch (err) {
+
+        console.error(err);
+
+        this.setCellText(
+          toCol,
+          task.row,
+          '[Translation Error]'
+        );
       }
-      await this.delay(15);
+
+      // tiny delay
+      await this.delay(80);
     }
 
-    this.setStatus(`✅ Translated ${done} cells successfully`);
-    this.commandStatus.textContent = `✅ Done — ${done} cells translated`;
+    this.setStatus(
+      `✅ Finished ${completed} translations`
+    );
+
+    this.setCommandStatus(
+      `✅ Done! ${completed} translated`
+    );
+
     this.hideProgress();
+
     this.isRunning = false;
   }
 
-  async processAICommand(fromCol, toCol, action) {
-    // (kept for summarize/grammar/sentiment - uses light model)
-    // ... same as previous version
-    this.setStatus(`✅ ${action} completed`);
-    this.hideProgress();
-    this.isRunning = false;
-  }
-
+  // ===============================
+  // UTIL
+  // ===============================
   delay(ms) {
-    return new Promise(r => setTimeout(r, ms));
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
+}
+
+// ===============================
+// START AI
+// ===============================
+const aiTable = document.getElementById('sheet');
+
+if (aiTable) {
+
+  new SpreadsheetAI(aiTable);
+
+} else {
+
+  console.error('Sheet table not found');
 }
