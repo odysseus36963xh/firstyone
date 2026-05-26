@@ -1,5 +1,5 @@
 // ===============================
-// LIGHTWEIGHT AI MODULE
+// LIGHTWEIGHT AI MODULE - FIXED VERSION
 // GitHub Pages Friendly
 // Uses LibreTranslate API
 // NO Xenova
@@ -14,9 +14,13 @@ class SpreadsheetAI {
     this.stopRequested = false;
     this.isLoaded = false;
 
-    // FREE PUBLIC ENDPOINT
-    // You can replace later with your own server
-    this.API_URL = "https://libretranslate.de/translate";
+    // MULTIPLE FREE ENDPOINTS (fallback system)
+    this.API_URLS = [
+      "https://libretranslate.de/translate",
+      "https://libretranslate.com/translate",
+      "https://translate.argosopentech.com/translate"
+    ];
+    this.currentAPI = 0;
 
     // UI Elements
     this.statusEl = document.getElementById('aiStatus');
@@ -82,7 +86,6 @@ class SpreadsheetAI {
 
     if (this.commandInput) {
       this.commandInput.addEventListener('keydown', (e) => {
-        // CTRL + ENTER
         if (e.ctrlKey && e.key === 'Enter') {
           e.preventDefault();
           this.executeCommand();
@@ -111,9 +114,7 @@ class SpreadsheetAI {
     this.executeBtn.disabled = false;
     this.panel.classList.add('active');
     this.setStatus('✅ Ready');
-    this.setCommandStatus(
-      'Example: translate column a to column b spanish'
-    );
+    this.setCommandStatus('Example: translate column a to column b spanish');
   }
 
   // ===============================
@@ -122,6 +123,7 @@ class SpreadsheetAI {
   setStatus(msg) {
     if (this.statusEl) {
       this.statusEl.textContent = msg;
+      console.log('[AI Status]', msg);
     }
   }
 
@@ -129,6 +131,7 @@ class SpreadsheetAI {
     if (this.commandStatus) {
       this.commandStatus.classList.add('active');
       this.commandStatus.textContent = msg;
+      console.log('[AI Command]', msg);
     }
   }
 
@@ -150,8 +153,7 @@ class SpreadsheetAI {
     const pct = Math.round((done / total) * 100);
     this.progressFill.style.width = pct + '%';
     this.progressText.textContent = `Row ${row} • ${done}/${total} (${pct}%)`;
-    this.currentCellEl.textContent =
-      text.length > 50 ? text.substring(0, 50) + '...' : text;
+    this.currentCellEl.textContent = text.length > 50 ? text.substring(0, 50) + '...' : text;
   }
 
   // ===============================
@@ -220,12 +222,10 @@ class SpreadsheetAI {
   }
 
   async summarizeColumn(fromCol, toCol) {
-    // Lightweight placeholder: not supported by LibreTranslate alone
     this.setCommandStatus('⚠️ Summarize is not available with this free API. Try translate or rewrite instead.');
   }
 
   async rewriteColumn(fromCol, toCol) {
-    // Lightweight placeholder: not supported by LibreTranslate alone
     this.setCommandStatus('⚠️ Rewrite is not available with this free API. Try translate instead.');
   }
 
@@ -236,32 +236,20 @@ class SpreadsheetAI {
     const cmd = command.toLowerCase();
     let m;
 
-    // Delete column
     m = cmd.match(/delete\s+column\s+([a-zA-Z])/);
     if (m) {
-      return {
-        action: 'delete_column',
-        col: m[1].toUpperCase().charCodeAt(0) - 65
-      };
+      return { action: 'delete_column', col: m[1].toUpperCase().charCodeAt(0) - 65 };
     }
 
-    // Clear column
     m = cmd.match(/clear\s+column\s+([a-zA-Z])/);
     if (m) {
-      return {
-        action: 'clear_column',
-        col: m[1].toUpperCase().charCodeAt(0) - 65
-      };
+      return { action: 'clear_column', col: m[1].toUpperCase().charCodeAt(0) - 65 };
     }
 
-    // Clear all
     if ((cmd.includes('clear') && cmd.includes('all')) || cmd.includes('clear cells')) {
-      return {
-        action: 'clear_all'
-      };
+      return { action: 'clear_all' };
     }
 
-    // Summarize
     m = cmd.match(/summarize\s+column\s+([a-zA-Z])\s+to\s+column\s+([a-zA-Z])/);
     if (m) {
       return {
@@ -271,7 +259,6 @@ class SpreadsheetAI {
       };
     }
 
-    // Rewrite
     m = cmd.match(/rewrite\s+column\s+([a-zA-Z])\s+to\s+column\s+([a-zA-Z])/);
     if (m) {
       return {
@@ -281,31 +268,21 @@ class SpreadsheetAI {
       };
     }
 
-    // Translate
     m = cmd.match(/translate\s+column\s+([a-zA-Z])\s+to\s+column\s+([a-zA-Z])/);
     if (m) {
       const fromCol = m[1].toUpperCase().charCodeAt(0) - 65;
       const toCol = m[2].toUpperCase().charCodeAt(0) - 65;
       let targetLang = 'es';
-      // Find language
       for (const [name, code] of Object.entries(this.languageMap)) {
         if (cmd.includes(name)) {
           targetLang = code;
           break;
         }
       }
-      return {
-        action: 'translate',
-        fromCol,
-        toCol,
-        targetLang
-      };
+      return { action: 'translate', fromCol, toCol, targetLang };
     }
 
-    return {
-      action: 'unknown',
-      error: 'Command not recognized'
-    };
+    return { action: 'unknown', error: 'Command not recognized. Try: "translate column a to column b spanish"' };
   }
 
   // ===============================
@@ -315,7 +292,10 @@ class SpreadsheetAI {
     if (this.isRunning) return;
     const command = this.commandInput.value.trim();
     if (!command) return;
+    
+    this.setCommandStatus('#...');
     const parsed = this.interpretCommand(command);
+    
     if (parsed.error) {
       this.setCommandStatus('❌ ' + parsed.error);
       return;
@@ -325,111 +305,141 @@ class SpreadsheetAI {
       case 'translate': {
         const fromLetter = String.fromCharCode(parsed.fromCol + 65);
         const toLetter = String.fromCharCode(parsed.toCol + 65);
-        this.setCommandStatus(`✅ Translating ${fromLetter} → ${toLetter}`);
+        this.setCommandStatus(`🔄 Translating ${fromLetter} → ${toLetter}...`);
         await this.translateColumn(parsed.fromCol, parsed.toCol, parsed.targetLang);
         break;
       }
-      case 'delete_column': {
+      case 'delete_column':
         this.deleteColumn(parsed.col);
         break;
-      }
-      case 'clear_column': {
+      case 'clear_column':
         this.clearColumn(parsed.col);
         break;
-      }
-      case 'clear_all': {
+      case 'clear_all':
         this.clearAll();
         break;
-      }
-      case 'summarize': {
+      case 'summarize':
         await this.summarizeColumn(parsed.fromCol, parsed.toCol);
         break;
-      }
-      case 'rewrite': {
+      case 'rewrite':
         await this.rewriteColumn(parsed.fromCol, parsed.toCol);
         break;
-      }
-      default: {
+      default:
         this.setCommandStatus('❌ Unknown command');
-        break;
-      }
     }
   }
 
   // ===============================
-  // API TRANSLATION
+  // API TRANSLATION - FIXED WITH FALLBACKS
   // ===============================
   async translateText(text, targetLang = 'es') {
-    const response = await fetch(this.API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        q: text,
-        source: 'auto',
-        target: targetLang,
-        format: 'text'
-      })
-    });
+    // Try all API endpoints until one works
+    for (let i = 0; i < this.API_URLS.length; i++) {
+      const apiIndex = (this.currentAPI + i) % this.API_URLS.length;
+      const apiURL = this.API_URLS[apiIndex];
+      
+      try {
+        console.log(`[AI] Trying API: ${apiURL}`);
+        
+        const response = await fetch(apiURL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            q: text,
+            source: 'auto',
+            target: targetLang,
+            format: 'text'
+          })
+        });
 
-    if (!response.ok) {
-      throw new Error('Translation failed');
+        if (!response.ok) {
+          console.warn(`[AI] API ${apiIndex} returned status: ${response.status}`);
+          continue;
+        }
+
+        const data = await response.json();
+        
+        // Check if translation actually happened
+        if (data.translatedText && data.translatedText !== text) {
+          console.log(`[AI] ✅ Translation successful from API ${apiIndex}`);
+          this.currentAPI = apiIndex;
+          return data.translatedText;
+        } else {
+          console.warn(`[AI] API returned same text, trying next API...`);
+          continue;
+        }
+        
+      } catch (err) {
+        console.error(`[AI] API ${apiIndex} failed:`, err.message);
+        continue;
+      }
     }
-
-    const data = await response.json();
-    return data.translatedText;
+    
+    // If all APIs fail, throw error
+    throw new Error('All translation APIs failed. The service might be down or rate-limited.');
   }
 
   // ===============================
-  // TRANSLATE COLUMN
+  // TRANSLATE COLUMN - FIXED
   // ===============================
   async translateColumn(fromCol, toCol, targetLang) {
     this.isRunning = true;
     this.stopRequested = false;
 
     const tasks = [];
-    // Start at row 2
     for (let r = 2; r < this.table.rows.length; r++) {
       const text = this.getCellText(fromCol, r);
-      if (text) {
-        tasks.push({
-          row: r,
-          text: text
-        });
+      if (text && text.length > 0) {
+        tasks.push({ row: r, text: text });
       }
     }
 
-    if (!tasks.length) {
+    if (tasks.length === 0) {
       this.setCommandStatus('⚠️ No text found in source column');
+      this.setStatus('⚠️ No data to translate');
       this.isRunning = false;
       return;
     }
 
-    this.showProgress(`Translating ${tasks.length} cells`);
+    this.showProgress(`Translating ${tasks.length} cells to ${targetLang.toUpperCase()}`);
+    this.setStatus(`🔄 Translating ${tasks.length} cells...`);
 
     let completed = 0;
-    // Process one by one
+    let errors = 0;
+
     for (const task of tasks) {
       if (this.stopRequested) break;
+      
       try {
+        // Mark as processing
         this.markCell(toCol, task.row, true);
         this.updateProgress(completed + 1, tasks.length, task.text, task.row - 1);
+        
+        // TRANSLATE
         const translated = await this.translateText(task.text, targetLang);
+        
+        // Write result
         this.setCellText(toCol, task.row, translated);
         this.markCell(toCol, task.row, false);
+        
         completed++;
+        console.log(`[AI] Row ${task.row}: "${task.text}" → "${translated}"`);
+        
       } catch (err) {
-        console.error(err);
-        this.setCellText(toCol, task.row, '[Translation Error]');
+        console.error(`[AI] Error at row ${task.row}:`, err);
+        errors++;
+        this.setCellText(toCol, task.row, `[ERROR: ${err.message}]`);
         this.markCell(toCol, task.row, false);
       }
-      // Small delay
-      await this.delay(80);
+      
+      // Small delay to avoid rate limiting
+      await this.delay(100);
     }
 
-    this.setStatus(`✅ Finished ${completed} translations`);
-    this.setCommandStatus(`✅ Done! ${completed} translated`);
+    this.setStatus(`✅ Finished: ${completed} translated, ${errors} errors`);
+    this.setCommandStatus(`✅ Done! ${completed}/${tasks.length} translated${errors > 0 ? `, ${errors} errors` : ''}`);
     this.hideProgress();
     this.isRunning = false;
   }
@@ -449,5 +459,5 @@ const aiTable = document.getElementById('sheet');
 if (aiTable) {
   new SpreadsheetAI(aiTable);
 } else {
-  console.error('Sheet table not found');
+  console.error('❌ Sheet table not found! Make sure you have <table id="sheet">');
 }
