@@ -232,37 +232,54 @@ class SpreadsheetAI {
     }
   }
 
+
+  
+
   // ===============================
   // COMMAND PARSER
   // ===============================
-  parseCommand(command) {
+  interpretCommand(command) {
 
-    let cmd = command.toLowerCase();
+command = command.toLowerCase();
 
-    // fix messy spelling
-    cmd = cmd
-      .replace(/xolumn/g, 'column')
-      .replace(/reanslate/g, 'translate')
-      .replace(/coumn/g, 'column')
-      .replace(/clumn/g, 'column')
-      .replace(/coln/g, 'column');
+if (command.includes("delete column")) {
+  return {
+    action: "delete_column"
+  };
+}
 
-    // MATCH:
-    // column a to b
-    // translate a to b
-    // column a into column b
-    const match = cmd.match(
-      /(?:column\s*)?([a-z])\s*(?:to|into)\s*(?:column\s*)?([a-z])/i
-    );
+if (command.includes("clear")) {
+  return {
+    action: "clear_cells"
+  };
+}
 
-    if (!match) {
+if (command.includes("summarize")) {
+  return {
+    action: "summarize"
+  };
+}
 
-      return {
-        error:
-          'Use something like: translate column a to b spanish'
-      };
-    }
+if (command.includes("rewrite")) {
+  return {
+    action: "rewrite"
+  };
+}
 
+if (command.includes("translate")) {
+  return {
+    action: "translate"
+  };
+}
+
+return {
+  action: "unknown"
+};
+
+}
+
+
+  
     const fromCol =
       match[1].toUpperCase().charCodeAt(0) - 65;
 
@@ -300,7 +317,7 @@ class SpreadsheetAI {
 
     if (!command) return;
 
-    const parsed = this.parseCommand(command);
+    const parsed = this.interpretCommand(cmd);
 
     if (parsed.error) {
 
