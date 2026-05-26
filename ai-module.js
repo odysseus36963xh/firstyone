@@ -238,110 +238,205 @@ class SpreadsheetAI {
   // ===============================
   // COMMAND PARSER
   // ===============================
-  interpretCommand(command) {
+interpretCommand(command) {
 
-command = command.toLowerCase();
+  const cmd = command.toLowerCase();
 
-if (command.includes("delete column")) {
-  return {
-    action: "delete_column"
-  };
-}
+  if (cmd.includes('delete column')) {
 
-if (command.includes("clear")) {
-  return {
-    action: "clear_cells"
-  };
-}
+    const match =
+      cmd.match(/delete column\s+([a-z])/i);
 
-if (command.includes("summarize")) {
-  return {
-    action: "summarize"
-  };
-}
+    return {
+      action: 'delete_column',
+      targetColumn:
+        match[1].toUpperCase().charCodeAt(0) - 65
+    };
+  }
 
-if (command.includes("rewrite")) {
-  return {
-    action: "rewrite"
-  };
-}
+  if (cmd.includes('clear')) {
 
-if (command.includes("translate")) {
-  return {
-    action: "translate"
-  };
-}
+    const match =
+      cmd.match(/([a-z]+\d+):([a-z]+\d+)/i);
 
-return {
-  action: "unknown"
-};
+    return {
+      action: 'clear_range',
+      range: match[0].toUpperCase()
+    };
+  }
 
-}
+  if (cmd.includes('rewrite')) {
 
+    return {
+      action: 'rewrite'
+    };
+  }
 
-  
-    const fromCol =
-      match[1].toUpperCase().charCodeAt(0) - 65;
+  if (cmd.includes('summarize')) {
 
-    const toCol =
-      match[2].toUpperCase().charCodeAt(0) - 65;
+    return {
+      action: 'summarize'
+    };
+  }
 
-    // default language
-    let targetLang = 'es';
+  if (cmd.includes('translate')) {
 
-    for (const [name, code] of Object.entries(this.languageMap)) {
+    const match = cmd.match(
+      /(?:column\s*)?([a-z])\s*(?:to|into)\s*(?:column\s*)?([a-z])/i
+    );
+
+    let targetLang = 'en';
+
+    for (const [name, code]
+      of Object.entries(this.languageMap)) {
 
       if (cmd.includes(name)) {
-
         targetLang = code;
-        break;
       }
     }
 
     return {
+
       action: 'translate',
-      fromCol,
-      toCol,
+
+      fromCol:
+        match[1].toUpperCase().charCodeAt(0) - 65,
+
+      toCol:
+        match[2].toUpperCase().charCodeAt(0) - 65,
+
       targetLang
     };
   }
 
-  // ===============================
-  // EXECUTE COMMAND
-  // ===============================
-  async executeCommand() {
+  return {
+    error: 'Unknown command'
+  };
+}
 
-    if (this.isRunning) return;
+parseRange(range) {
 
-    const command = this.commandInput.value.trim();
+  const match =
+    range.match(/([A-Z]+)(\d+):([A-Z]+)(\d+)/i);
 
-    if (!command) return;
+  return {
 
-    const parsed = this.interpretCommand(cmd);
+    startCol:
+      match[1].charCodeAt(0) - 65,
 
-    if (parsed.error) {
+    startRow:
+      parseInt(match[2]),
 
-      this.setCommandStatus('❌ ' + parsed.error);
+    endCol:
+      match[3].charCodeAt(0) - 65,
 
-      return;
+    endRow:
+      parseInt(match[4])
+  };
+}
+
+clearRange(range) {
+
+  const r = this.parseRange(range);
+
+  for (let row = r.startRow;
+       row <= r.endRow;
+       row++) {
+
+    for (let col = r.startCol;
+         col <= r.endCol;
+         col++) {
+
+      const cell =
+        this.table.rows[row + 1]
+        ?.cells[col + 1];
+
+      if (cell) {
+        cell.textContent = '';
+      }
     }
+  }
+}
 
-    const fromLetter =
-      String.fromCharCode(parsed.fromCol + 65);
+deleteColumn(colIndex) {
 
-    const toLetter =
-      String.fromCharCode(parsed.toCol + 65);
+  for (let row = 0;
+       row < this.table.rows.length;
+       row++) {
+
+    const r = this.table.rows[row];
+
+    if (r.cells[colIndex + 1]) {
+      r.deleteCell(colIndex + 1);
+    }
+  }
+}
+
+async executeCommand() {
+
+  if (this.isRunning) return;
+
+  const command =
+    this.commandInput.value.trim();
+
+  const parsed =
+    this.interpretCommand(command);
+
+  if (parsed.action === 'delete_column') {
+
+    this.deleteColumn(
+      parsed.targetColumn
+    );
 
     this.setCommandStatus(
-      `✅ Translating ${fromLetter} → ${toLetter}`
+      '✅ Column deleted'
     );
+
+    return;
+  }
+
+  if (parsed.action === 'clear_range') {
+
+    this.clearRange(
+      parsed.range
+    );
+
+    this.setCommandStatus(
+      '✅ Cells cleared'
+    );
+
+    return;
+  }
+
+  if (parsed.action === 'rewrite') {
+
+    this.setCommandStatus(
+      '✅ Rewrite detected'
+    );
+
+    return;
+  }
+
+  if (parsed.action === 'summarize') {
+
+    this.setCommandStatus(
+      '✅ Summarize detected'
+    );
+
+    return;
+  }
+
+  if (parsed.action === 'translate') {
 
     await this.translateColumn(
       parsed.fromCol,
       parsed.toCol,
       parsed.targetLang
     );
+
+    return;
   }
+}
 
   // ===============================
   // API TRANSLATION
