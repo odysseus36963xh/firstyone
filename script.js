@@ -4,6 +4,270 @@
 let isReading = false;
 let voices = [];
 
+
+
+/* =========================================================
+   PRACTICE HEATMAP — JAVASCRIPT
+   =========================================================
+   Production-ready. No external dependencies.
+   ========================================================= */
+
+(function () {
+    "use strict";
+
+    /* ---------------------------------------------------------
+       Color stops for the heatmap.
+       Each stop = { count, rgb:[r,g,b] }.
+       Values between stops are linearly interpolated.
+       --------------------------------------------------------- */
+    var HEATMAP_STOPS = [
+        { count: 0,   rgb: [255, 255, 255] }, // #ffffff
+        { count: 1,   rgb: [255, 230, 238] }, // #ffe6ee
+        { count: 10,  rgb: [255, 179, 204] }, // #ffb3cc
+        { count: 25,  rgb: [255, 204, 128] }, // #ffcc80
+        { count: 50,  rgb: [255, 241, 118] }, // #fff176
+        { count: 75,  rgb: [165, 214, 167] }, // #a5d6a7
+        { count: 100, rgb: [76, 175, 80]   }  // #4caf50
+    ];
+
+    /* ---------------------------------------------------------
+       Internal: linear interpolation between two numbers.
+       --------------------------------------------------------- */
+    function lerp(a, b, t) {
+        return a + (b - a) * t;
+    }
+
+    /* ---------------------------------------------------------
+       Internal: convert a listen count into an interpolated
+       rgb() CSS color string using HEATMAP_STOPS.
+       --------------------------------------------------------- */
+    function getHeatmapColor(count) {
+        if (!isFinite(count) || count <= 0) {
+            return "rgb(255, 255, 255)";
+        }
+
+        // Clamp to the maximum defined stop.
+        var lastStop = HEATMAP_STOPS[HEATMAP_STOPS.length - 1];
+        if (count >= lastStop.count) {
+            return "rgb(" + lastStop.rgb[0] + ", " +
+                            lastStop.rgb[1] + ", " +
+                            lastStop.rgb[2] + ")";
+        }
+
+        // Find the two stops the count falls between.
+        for (var i = 0; i < HEATMAP_STOPS.length - 1; i++) {
+            var lower = HEATMAP_STOPS[i];
+            var upper = HEATMAP_STOPS[i + 1];
+
+            if (count >= lower.count && count <= upper.count) {
+                var range = upper.count - lower.count;
+                var t = range === 0 ? 0 : (count - lower.count) / range;
+
+                var r = Math.round(lerp(lower.rgb[0], upper.rgb[0], t));
+                var g = Math.round(lerp(lower.rgb[1], upper.rgb[1], t));
+                var b = Math.round(lerp(lower.rgb[2], upper.rgb[2], t));
+
+                return "rgb(" + r + ", " + g + ", " + b + ")";
+            }
+        }
+
+        // Fallback (should not be reached).
+        return "rgb(255, 255, 255)";
+    }
+
+    /* ---------------------------------------------------------
+       Internal: determine the practice-level CSS class
+       for a given listen count.
+       --------------------------------------------------------- */
+    function getPracticeClass(count) {
+        if (count >= 100) return "practice-mastered";
+        if (count >= 50)  return "practice-high";
+        if (count >= 10)  return "practice-medium";
+        if (count >= 1)   return "practice-low";
+        return null; // 0 listens => no practice class
+    }
+
+    var PRACTICE_CLASSES = [
+        "practice-low",
+        "practice-medium",
+        "practice-high",
+        "practice-mastered"
+    ];
+
+    /* ---------------------------------------------------------
+       Internal: read a cell's current listen count safely.
+       --------------------------------------------------------- */
+    function readCount(cell) {
+        var raw = cell.dataset.listenCount;
+        var n = parseInt(raw, 10);
+        return isFinite(n) && n > 0 ? n : 0;
+    }
+
+    /* =========================================================
+       PUBLIC: updateCellPracticeColor(cell)
+       Applies the interpolated heatmap background color and
+       the correct practice-level class. Touches only this cell.
+       ========================================================= */
+    function updateCellPracticeColor(cell) {
+        if (!cell) return;
+
+        var count = readCount(cell);
+
+        // Apply interpolated background color directly.
+        cell.style.backgroundColor = getHeatmapColor(count);
+
+        // Update practice-level class (remove old, add new).
+        var targetClass = getPracticeClass(count);
+        for (var i = 0; i < PRACTICE_CLASSES.length; i++) {
+            if (PRACTICE_CLASSES[i] !== targetClass) {
+                cell.classList.remove(PRACTICE_CLASSES[i]);
+            }
+        }
+        if (targetClass) {
+            cell.classList.add(targetClass);
+        }
+
+        // Ensure the cell can anchor a badge without layout shift.
+        if (!cell.classList.contains("practice-cell")) {
+            cell.classList.add("practice-cell");
+        }
+    }
+
+    /* =========================================================
+       PUBLIC: updateCellPracticeBadge(cell)
+       Creates/updates/hides the upper-right corner badge.
+       Reuses the existing badge node to avoid DOM churn.
+       ========================================================= */
+    function updateCellPracticeBadge(cell) {
+        if (!cell) return;
+
+        var count = readCount(cell);
+
+        // Find existing badge (cached lookup, single child query).
+        var badge = cell.querySelector(":scope > .practice-badge");
+
+        if (count <= 0) {
+            // Hide (do not remove) to avoid repeated create/destroy cost.
+            if (badge) {
+                badge.classList.remove("is-visible");
+            }
+            return;
+        }
+
+        if (!badge) {
+            badge = document.createElement("span");
+            badge.className = "practice-badge";
+            cell.appendChild(badge);
+
+            // Make sure the cell is an anchor for the badge.
+            if (!cell.classList.contains("practice-cell")) {
+                cell.classList.add("practice-cell");
+            }
+        }
+
+        var label = "🔁 " + count;
+        if (badge.textContent !== label) {
+            badge.textContent = label;
+        }
+        badge.classList.add("is-visible");
+    }
+
+    /* =========================================================
+       PUBLIC: incrementCellListenCount(cell)
+       Increments the cell's listen count by 1 and updates ONLY
+       that cell's color + badge. Call this AFTER successful
+       completion of TTS or audio playback.
+       ========================================================= */
+    function incrementCellListenCount(cell) {
+        if (!cell) return;
+
+        var count = readCount(cell);
+        count += 1;
+        cell.dataset.listenCount = String(count);
+
+        // Update only the affected cell — no full-table scan.
+        updateCellPracticeColor(cell);
+        updateCellPracticeBadge(cell);
+    }
+
+    /* =========================================================
+       PUBLIC: exportPracticeData()
+       Returns a plain object mapping cell-id -> listenCount.
+       Include the returned object in your existing JSON export.
+
+       NOTE: Each cell must have a stable identifier so counts
+       can be restored. We use cell.dataset.cellId. If your cells
+       already have an id, set CELL_ID_ATTR accordingly below.
+       ========================================================= */
+
+    // Adjust this if your cells identify themselves differently.
+    var CELL_SELECTOR = ".practice-cell, [data-cell-id]";
+    var CELL_ID_ATTR = "cellId"; // => cell.dataset.cellId
+
+    function getCellId(cell) {
+        return cell.dataset[CELL_ID_ATTR] || cell.id || null;
+    }
+
+    function exportPracticeData() {
+        var data = {};
+        var cells = document.querySelectorAll(CELL_SELECTOR);
+
+        for (var i = 0; i < cells.length; i++) {
+            var cell = cells[i];
+            var count = readCount(cell);
+            if (count > 0) {
+                var id = getCellId(cell);
+                if (id) {
+                    data[id] = count;
+                }
+            }
+        }
+        return data;
+    }
+
+    /* =========================================================
+       PUBLIC: restorePracticeData(data)
+       Accepts the object produced by exportPracticeData() and
+       restores counts, then rebuilds colors + badges.
+       Only touches cells that exist and have stored counts
+       (plus a light pass to clear any stale visuals).
+       ========================================================= */
+    function restorePracticeData(data) {
+        if (!data || typeof data !== "object") return;
+
+        var cells = document.querySelectorAll(CELL_SELECTOR);
+
+        for (var i = 0; i < cells.length; i++) {
+            var cell = cells[i];
+            var id = getCellId(cell);
+            var count = id && Object.prototype.hasOwnProperty.call(data, id)
+                ? parseInt(data[id], 10)
+                : 0;
+
+            if (!isFinite(count) || count < 0) {
+                count = 0;
+            }
+
+            cell.dataset.listenCount = String(count);
+
+            // Rebuild visuals for this cell.
+            updateCellPracticeColor(cell);
+            updateCellPracticeBadge(cell);
+        }
+    }
+
+    /* ---------------------------------------------------------
+       Expose the public API globally so existing code can call.
+       --------------------------------------------------------- */
+    window.incrementCellListenCount = incrementCellListenCount;
+    window.updateCellPracticeColor  = updateCellPracticeColor;
+    window.updateCellPracticeBadge  = updateCellPracticeBadge;
+    window.exportPracticeData       = exportPracticeData;
+    window.restorePracticeData      = restorePracticeData;
+})();
+
+
+
 function loadVoices() {
   voices = speechSynthesis.getVoices() || [];
   updateLanguageDropdowns();
@@ -458,7 +722,7 @@ fileInput.addEventListener("change", function(e) {
 // ===============================
 // SPEAK FUNCTION
 // ===============================
-function speak(text, lang, rate) {
+function speak(text, lang, rate，cell) {
   return new Promise(resolve => {
     if (!text || !text.trim()) return resolve();
 
@@ -474,7 +738,10 @@ function speak(text, lang, rate) {
 
  utter.rate = rate || 1;
 utter.pitch = 1.05;
-    utter.onend = resolve;
+    
+    utter.onend = function() {
+    incrementCellListenCount(cell); // ADD THIS 
+      resolve;
     utter.onerror = resolve;
 
     speechSynthesis.speak(utter);
@@ -613,7 +880,7 @@ function playCellMedia(cell) {
 
       window.currentMediaElements.push(audio);
 
-      await playAndWaitForAudio(audio);
+      window._currentCellForAudio = cell; await playAndWaitForAudio(audio);
     }
 
     window.currentMediaElements = null;
@@ -645,7 +912,13 @@ function playAndWaitForAudio(audio) {
       resolve();
     }
 
-    audio.onended = done;
+   audio.onended = function() {
+    // ADD THIS - increment for the cell that owns this audio
+    if (window._currentCellForAudio) {
+        incrementCellListenCount(window._currentCellForAudio);
+    }
+    done();
+};
     audio.onerror = done;
     audio.onabort = done;
 
@@ -798,7 +1071,7 @@ async function startReading() {
               // - language is not Off
               // - text exists
               if (!mediaResult.hasAudio && lang !== "Off" && cleanText) {
-                await speak(cleanText, lang, getSpeed());
+                await speak(cleanText, lang, getSpeed(), cell);
               }
 
               cell.classList.remove("reading");
@@ -903,6 +1176,7 @@ async function exportTableData() { // <-- Now async
         cells,
         languages,
         media // <-- NEW
+        practiceData: exportPracticeData() // ADD THIS LINE
     };
 }
 
@@ -1016,6 +1290,9 @@ function uploadTable() {
                         const td = newRow.insertCell();
                         td.textContent = rowArray[c] || "";
                         td.contentEditable = "true";
+                      // ADD THESE LINES:
+                      td.dataset.cellId = r + ":" + c; // Stable ID for save/load
+                      td.dataset.listenCount = "0";    // Initialize listen count
 
                         // Restore media if exists
                         const cellKey = `${r}-${c}`;
@@ -1051,8 +1328,9 @@ function uploadTable() {
                         }
                     }
                 }
-
-                alert("✅ Table and media uploaded successfully!");
+ if (data.practiceData) {     
+   restorePracticeData(data.practiceData); }  
+              alert("✅ Table and media uploaded successfully!");
 
             } catch (err) {
                 alert("Invalid JSON file: " + (err.message || ""));
@@ -1578,3 +1856,28 @@ document.getElementById("openFinder").addEventListener("click", () => {
 // ===============================
 document.getElementById("recordBtn")?.addEventListener("click", startRecording);
 document.getElementById("stopRecordBtn")?.addEventListener("click", stopRecording);
+
+
+
+// Sync practice visuals on page load
+(function syncInitialPracticeVisuals() {
+    var cells = document.querySelectorAll("td[contenteditable='true']");
+    for (var i = 0; i < cells.length; i++) {
+        var cell = cells[i];
+        // Ensure cell ID exists
+        if (!cell.dataset.cellId) {
+            var row = cell.closest("tr");
+            var rowIndex = row ? row.rowIndex - 2 : 0;
+            var colIndex = cell.cellIndex - 1;
+            cell.dataset.cellId = rowIndex + ":" + colIndex;
+        }
+        if (!cell.dataset.listenCount) {
+            cell.dataset.listenCount = "0";
+        }
+        if (!cell.classList.contains("practice-cell")) {
+            cell.classList.add("practice-cell");
+        }
+        updateCellPracticeColor(cell);
+        updateCellPracticeBadge(cell);
+    }
+})();
