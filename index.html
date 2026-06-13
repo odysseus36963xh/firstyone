@@ -6,6 +6,77 @@
 
 <title>Speech Table System</title>
 <style>
+/* =========================================================
+   PRACTICE HEATMAP — CSS SECTION
+   ========================================================= */
+
+/* The cell MUST be position:relative so the badge can anchor
+   to its upper-right corner without causing layout shifts. */
+.practice-cell {
+    position: relative;
+}
+
+/* Smooth color transition when the heatmap color changes.
+   Kept short to remain performant on large tables. */
+.practice-cell {
+    transition: background-color 0.25s ease-out;
+}
+
+/* -----------------------------------------
+   Practice level classes (threshold based)
+   ----------------------------------------- */
+.practice-low {
+    /* 1–9 listens */
+}
+
+.practice-medium {
+    /* 10–49 listens */
+}
+
+.practice-high {
+    /* 50–99 listens */
+}
+
+.practice-mastered {
+    /* 100+ listens */
+    font-weight: 600;
+}
+
+/* -----------------------------------------
+   Badge in the upper-right corner of a cell
+   ----------------------------------------- */
+.practice-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+
+    /* No layout shift: absolutely positioned, no flow impact */
+    pointer-events: none;
+    user-select: none;
+
+    font-size: 10px;
+    line-height: 1;
+    padding: 1px 4px;
+    border-radius: 8px;
+
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    white-space: nowrap;
+
+    /* Hidden by default; shown only when count > 0 */
+    display: none;
+    z-index: 2;
+}
+
+/* Visible state toggled by JS via class to avoid inline style churn */
+.practice-badge.is-visible {
+    display: inline-block;
+}
+
+
+
+
+  
 /* ========== AI MODULE STYLES ========== */
 
 /* Activate Button (shows on load) */
