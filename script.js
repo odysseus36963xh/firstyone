@@ -722,7 +722,7 @@ fileInput.addEventListener("change", function(e) {
 // ===============================
 // SPEAK FUNCTION
 // ===============================
-function speak(text, lang, rate，cell) {
+function speak(text, lang, rate,cell) {
   return new Promise(resolve => {
     if (!text || !text.trim()) return resolve();
 
@@ -739,9 +739,11 @@ function speak(text, lang, rate，cell) {
  utter.rate = rate || 1;
 utter.pitch = 1.05;
     
-    utter.onend = function() {
-    incrementCellListenCount(cell); // ADD THIS 
-      resolve;
+ utter.onend = function() {
+      incrementCellListenCount(cell);
+      resolve();
+    };
+
     utter.onerror = resolve;
 
     speechSynthesis.speak(utter);
