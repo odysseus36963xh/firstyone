@@ -1177,7 +1177,7 @@ async function exportTableData() { // <-- Now async
         rows: dataRows,
         cells,
         languages,
-        media // <-- NEW
+        media, // <-- NEW
         practiceData: exportPracticeData() // ADD THIS LINE
     };
 }
