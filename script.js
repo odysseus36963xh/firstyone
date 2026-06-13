@@ -138,40 +138,15 @@ let voices = [];
        Creates/updates/hides the upper-right corner badge.
        Reuses the existing badge node to avoid DOM churn.
        ========================================================= */
+
+   
     function updateCellPracticeBadge(cell) {
-        if (!cell) return;
+    return;
+}
 
-        var count = readCount(cell);
 
-        // Find existing badge (cached lookup, single child query).
-        var badge = cell.querySelector(":scope > .practice-badge");
 
-        if (count <= 0) {
-            // Hide (do not remove) to avoid repeated create/destroy cost.
-            if (badge) {
-                badge.classList.remove("is-visible");
-            }
-            return;
-        }
-
-        if (!badge) {
-            badge = document.createElement("span");
-            badge.className = "practice-badge";
-            cell.appendChild(badge);
-
-            // Make sure the cell is an anchor for the badge.
-            if (!cell.classList.contains("practice-cell")) {
-                cell.classList.add("practice-cell");
-            }
-        }
-
-        var label = "🔁 " + count;
-        if (badge.textContent !== label) {
-            badge.textContent = label;
-        }
-        badge.classList.add("is-visible");
-    }
-
+   
     /* =========================================================
        PUBLIC: incrementCellListenCount(cell)
        Increments the cell's listen count by 1 and updates ONLY
